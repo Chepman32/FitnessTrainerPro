@@ -1,16 +1,18 @@
 /**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
+ * Fitness Trainer Pro App bootstrap
  */
 
-import { NewAppScreen } from '@react-native/new-app-screen';
+import React, { useMemo, useState } from 'react';
 import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { PreferencesProvider } from './src/state/PreferencesContext';
+import { SessionProvider, useSession } from './src/state/SessionContext';
+import HomeScreen from './src/screens/HomeScreen';
+import SetupScreen from './src/screens/SetupScreen';
+import TrainingScreen from './src/screens/TrainingScreen';
+import DoneScreen from './src/screens/DoneScreen';
+
+type Route = 'home' | 'setup' | 'training' | 'done';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
@@ -18,22 +20,34 @@ function App() {
   return (
     <SafeAreaProvider>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppContent />
+      <PreferencesProvider>
+        <SessionProvider>
+          <AppRouter />
+        </SessionProvider>
+      </PreferencesProvider>
     </SafeAreaProvider>
   );
 }
 
-function AppContent() {
-  const safeAreaInsets = useSafeAreaInsets();
+function AppRouter() {
+  const [route, setRoute] = useState<Route>('home');
+  const { setSetup } = useSession();
 
-  return (
-    <View style={styles.container}>
-      <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
+  const screens = useMemo(() => ({
+    home: (
+      <HomeScreen
+        onSelect={t => {
+          setSetup({ typeId: t.id });
+          setRoute('setup');
+        }}
       />
-    </View>
-  );
+    ),
+    setup: <SetupScreen />,
+    training: <TrainingScreen />,
+    done: <DoneScreen />,
+  }), [setSetup]);
+
+  return <View style={styles.container}>{screens[route]}</View>;
 }
 
 const styles = StyleSheet.create({
