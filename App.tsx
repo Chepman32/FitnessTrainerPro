@@ -14,6 +14,7 @@ import TrainingScreen from './src/screens/TrainingScreen';
 import DoneScreen from './src/screens/DoneScreen';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { StyleSheet } from 'react-native';
 
 type RootStackParamList = {
   home: undefined;
@@ -28,7 +29,7 @@ function App() {
 
   return (
     <SafeAreaProvider>
-      <GestureHandlerRootView style={{ flex: 1 }}>
+      <GestureHandlerRootView style={styles.flex1}>
         <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
         <PreferencesProvider>
           <SessionProvider>
@@ -41,6 +42,10 @@ function App() {
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  flex1: { flex: 1 },
+});
 
 function AppStack() {
   const { setSetup } = useSession();
@@ -59,11 +64,13 @@ function AppStack() {
           />
         )}
       </Stack.Screen>
-      <Stack.Screen name="setup">
+      <Stack.Screen
+        name="setup"
+        options={{ headerShown: true, title: 'Setup' }}
+      >
         {({ navigation }) => (
           <SetupScreen
             onStart={() => navigation.navigate('training')}
-            onBack={() => navigation.navigate('home')}
           />
         )}
       </Stack.Screen>

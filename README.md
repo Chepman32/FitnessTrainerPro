@@ -99,3 +99,27 @@ To learn more about React Native, take a look at the following resources:
 - [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
 - [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
 - [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+
+---
+
+## Development Progress
+
+Updated: 2025-08-19 15:53 (+03:00)
+
+- Home screen: completed (training type grid and navigation to Setup)
+- Setup screen: implemented
+  - Duration chips: 3 / 5 / 10 min
+  - Custom duration mode with stepper (1–180 min)
+  - Difficulty chips: Light → Pro
+  - Bound to `SessionContext` (`src/state/SessionContext.tsx`): updates `durationMin`, `difficulty`, keeps selected `typeId`
+  - Start button disabled until valid
+  - Duration and Difficulty selectors are horizontal carousels (`ScrollView horizontal`)
+  - Uses default React Navigation Back button (native header enabled for Setup)
+- Training screen: timer engine + progress ring, pause/resume/exit, completion haptic
+- iOS build: fixed RN Reanimated + worklets integration; pods autolink `react-native-worklets` and `react-native-worklets-core`
+
+Next:
+
+- Hook Lottie animation per `setup.typeId`
+- Add haptic micro-interactions on controls
+- Optional: SFX with a modern audio lib
