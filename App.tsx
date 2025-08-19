@@ -42,9 +42,27 @@ function AppRouter() {
         }}
       />
     ),
-    setup: <SetupScreen />,
-    training: <TrainingScreen />,
-    done: <DoneScreen />,
+    setup: (
+      <SetupScreen
+        onStart={() => {
+          setRoute('training');
+        }}
+        onBack={() => setRoute('home')}
+      />
+    ),
+    training: (
+      <TrainingScreen
+        onComplete={() => setRoute('done')}
+        onExit={() => setRoute('home')}
+      />
+    ),
+    done: (
+      <DoneScreen
+        onReplay={() => setRoute('training')}
+        onChangeSetup={() => setRoute('setup')}
+        onHome={() => setRoute('home')}
+      />
+    ),
   }), [setSetup]);
 
   return <View style={styles.container}>{screens[route]}</View>;
