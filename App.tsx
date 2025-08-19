@@ -5,6 +5,7 @@
 import React from 'react';
 import { StatusBar, useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PreferencesProvider } from './src/state/PreferencesContext';
 import { SessionProvider, useSession } from './src/state/SessionContext';
 import HomeScreen from './src/screens/HomeScreen';
@@ -27,14 +28,16 @@ function App() {
 
   return (
     <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <PreferencesProvider>
-        <SessionProvider>
-          <NavigationContainer>
-            <AppStack />
-          </NavigationContainer>
-        </SessionProvider>
-      </PreferencesProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+        <PreferencesProvider>
+          <SessionProvider>
+            <NavigationContainer>
+              <AppStack />
+            </NavigationContainer>
+          </SessionProvider>
+        </PreferencesProvider>
+      </GestureHandlerRootView>
     </SafeAreaProvider>
   );
 }

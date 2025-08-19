@@ -18,6 +18,7 @@ export function createTimerEngine(_config: TimerEngineConfig, _cb: TimerCallback
   let rafId: number | null = null;
   let running = false;
   let lastTick = 0;
+  let completed = false;
 
   const loop = () => {
     if (!running) return;
@@ -28,6 +29,15 @@ export function createTimerEngine(_config: TimerEngineConfig, _cb: TimerCallback
       lastTick = now;
       _cb.onTick?.(elapsed);
     }
+    // Completion condition
+    if (!completed && elapsed >= _config.totalMs) {
+      completed = true;
+      running = false;
+      if (rafId != null) cancelAnimationFrame(rafId);
+      rafId = null;
+      _cb.onComplete?.();
+      return;
+    }
     if (rafId != null) cancelAnimationFrame(rafId);
     rafId = requestAnimationFrame(loop);
   };
@@ -35,6 +45,12 @@ export function createTimerEngine(_config: TimerEngineConfig, _cb: TimerCallback
   return {
     start() {
       if (running) return;
+      if (completed) {
+        // restarting after completion resets state
+        startAt = 0;
+        pausedAt = 0;
+        completed = false;
+      }
       running = true;
       startAt = Date.now() - pausedAt; // resume from paused offset if any
       rafId = requestAnimationFrame(loop);
@@ -50,6 +66,7 @@ export function createTimerEngine(_config: TimerEngineConfig, _cb: TimerCallback
       running = false;
       startAt = 0;
       pausedAt = 0;
+      completed = false;
       if (rafId != null) cancelAnimationFrame(rafId);
       rafId = null;
     },

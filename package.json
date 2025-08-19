@@ -10,10 +10,21 @@
     "test": "jest"
   },
   "dependencies": {
+    "@react-native/new-app-screen": "0.81.0",
+    "@react-navigation/native": "^7.1.17",
+    "@react-navigation/native-stack": "^7.3.25",
+    "lottie-react-native": "^7.3.2",
     "react": "19.1.0",
     "react-native": "0.81.0",
-    "@react-native/new-app-screen": "0.81.0",
-    "react-native-safe-area-context": "^5.5.2"
+    "react-native-gesture-handler": "^2.28.0",
+    "react-native-haptic-feedback": "^2.3.3",
+    "react-native-keep-awake": "^4.0.0",
+    "react-native-reanimated": "^4.0.2",
+    "react-native-safe-area-context": "^5.5.2",
+    "react-native-screens": "^4.14.1",
+    "react-native-svg": "^15.12.1",
+    "react-native-worklets": "^0.4.0",
+    "react-native-worklets-core": "^1.6.2"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
@@ -37,5 +48,6 @@
   },
   "engines": {
     "node": ">=18"
-  }
+  },
+  "packageManager": "yarn@4.1.1+sha512.ec40d0639bb307441b945d9467139cbb88d14394baac760b52eca038b330d16542d66fef61574271534ace5a200518dabf3b53a85f1f9e4bfa37141b538a9590"
 }
