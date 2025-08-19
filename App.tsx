@@ -2,8 +2,8 @@
  * Fitness Trainer Pro App bootstrap
  */
 
-import React, { useMemo, useState } from 'react';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
+import React from 'react';
+import { StatusBar, useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { PreferencesProvider } from './src/state/PreferencesContext';
 import { SessionProvider, useSession } from './src/state/SessionContext';
@@ -11,8 +11,16 @@ import HomeScreen from './src/screens/HomeScreen';
 import SetupScreen from './src/screens/SetupScreen';
 import TrainingScreen from './src/screens/TrainingScreen';
 import DoneScreen from './src/screens/DoneScreen';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-type Route = 'home' | 'setup' | 'training' | 'done';
+type RootStackParamList = {
+  home: undefined;
+  setup: undefined;
+  training: undefined;
+  done: undefined;
+};
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
@@ -22,56 +30,59 @@ function App() {
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
       <PreferencesProvider>
         <SessionProvider>
-          <AppRouter />
+          <NavigationContainer>
+            <AppStack />
+          </NavigationContainer>
         </SessionProvider>
       </PreferencesProvider>
     </SafeAreaProvider>
   );
 }
 
-function AppRouter() {
-  const [route, setRoute] = useState<Route>('home');
+function AppStack() {
   const { setSetup } = useSession();
-
-  const screens = useMemo(() => ({
-    home: (
-      <HomeScreen
-        onSelect={t => {
-          setSetup({ typeId: t.id });
-          setRoute('setup');
-        }}
-      />
-    ),
-    setup: (
-      <SetupScreen
-        onStart={() => {
-          setRoute('training');
-        }}
-        onBack={() => setRoute('home')}
-      />
-    ),
-    training: (
-      <TrainingScreen
-        onComplete={() => setRoute('done')}
-        onExit={() => setRoute('home')}
-      />
-    ),
-    done: (
-      <DoneScreen
-        onReplay={() => setRoute('training')}
-        onChangeSetup={() => setRoute('setup')}
-        onHome={() => setRoute('home')}
-      />
-    ),
-  }), [setSetup]);
-
-  return <View style={styles.container}>{screens[route]}</View>;
+  return (
+    <Stack.Navigator
+      initialRouteName="home"
+      screenOptions={{ headerShown: false }}
+    >
+      <Stack.Screen name="home">
+        {({ navigation }) => (
+          <HomeScreen
+            onSelect={t => {
+              setSetup({ typeId: t.id });
+              navigation.navigate('setup');
+            }}
+          />
+        )}
+      </Stack.Screen>
+      <Stack.Screen name="setup">
+        {({ navigation }) => (
+          <SetupScreen
+            onStart={() => navigation.navigate('training')}
+            onBack={() => navigation.navigate('home')}
+          />
+        )}
+      </Stack.Screen>
+      <Stack.Screen name="training">
+        {({ navigation }) => (
+          <TrainingScreen
+            onComplete={() => navigation.navigate('done')}
+            onExit={() => navigation.navigate('home')}
+          />
+        )}
+      </Stack.Screen>
+      <Stack.Screen name="done">
+        {({ navigation }) => (
+          <DoneScreen
+            onReplay={() => navigation.navigate('training')}
+            onChangeSetup={() => navigation.navigate('setup')}
+            onHome={() => navigation.navigate('home')}
+          />
+        )}
+      </Stack.Screen>
+    </Stack.Navigator>
+  );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
 
 export default App;
