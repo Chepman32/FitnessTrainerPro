@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   StyleSheet,
   Text,
@@ -37,6 +37,10 @@ export const SetupScreen: React.FC<Props> = ({ onStart }) => {
       : 25,
   );
 
+  // Refs for ScrollViews to control scrolling
+  const durationScrollRef = useRef<ScrollView>(null);
+  const difficultyScrollRef = useRef<ScrollView>(null);
+
   const selectedTypeTitle = useMemo(() => {
     const tt = TRAINING_TYPES.find(t => t.id === setup.typeId);
     return tt?.title ?? 'Custom Training';
@@ -51,6 +55,37 @@ export const SetupScreen: React.FC<Props> = ({ onStart }) => {
     !!setup.difficulty &&
     !!setup.typeId;
 
+  // Auto-scroll to selected values when component mounts
+  useEffect(() => {
+    const scrollToSelectedValues = () => {
+      // Scroll to selected duration
+      if (!useCustom && setup.durationMin) {
+        const durationIndex = DURATIONS.findIndex(d => d === setup.durationMin);
+        if (durationIndex >= 0) {
+          const chipWidth = 104; // minWidth 80 + padding 20 + gap 12
+          const scrollX = Math.max(0, durationIndex * chipWidth - 50); // Center the chip
+          durationScrollRef.current?.scrollTo({ x: scrollX, animated: true });
+        }
+      }
+
+      // Scroll to selected difficulty
+      if (setup.difficulty) {
+        const difficultyIndex = DIFFICULTIES.findIndex(
+          d => d === setup.difficulty,
+        );
+        if (difficultyIndex >= 0) {
+          const chipWidth = 104; // minWidth 80 + padding 20 + gap 12
+          const scrollX = Math.max(0, difficultyIndex * chipWidth - 50); // Center the chip
+          difficultyScrollRef.current?.scrollTo({ x: scrollX, animated: true });
+        }
+      }
+    };
+
+    // Delay to ensure ScrollViews are rendered
+    const timer = setTimeout(scrollToSelectedValues, 100);
+    return () => clearTimeout(timer);
+  }, [setup.durationMin, setup.difficulty, useCustom]);
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -60,6 +95,7 @@ export const SetupScreen: React.FC<Props> = ({ onStart }) => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Duration</Text>
         <ScrollView
+          ref={durationScrollRef}
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.carouselContent}
@@ -120,6 +156,7 @@ export const SetupScreen: React.FC<Props> = ({ onStart }) => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Difficulty</Text>
         <ScrollView
+          ref={difficultyScrollRef}
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.carouselContent}

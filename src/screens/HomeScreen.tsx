@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { TRAINING_TYPES, TrainingType } from '../data/trainingTypes';
+import { useSession } from '../state/SessionContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import ExerciseIcon from '../components/ExerciseIcons';
 
@@ -23,9 +24,7 @@ const TabButton: React.FC<{
       size={20}
       color={active ? 'white' : 'rgba(255,255,255,0.6)'}
     />
-    <Text style={active ? styles.tabTextActive : styles.tabText}>
-      {label}
-    </Text>
+    <Text style={active ? styles.tabTextActive : styles.tabText}>{label}</Text>
   </Pressable>
 );
 
@@ -36,24 +35,31 @@ type Props = {
 
 export const HomeScreen: React.FC<Props> = ({ onSelect, onStart }) => {
   const isDark = useColorScheme() === 'dark';
+  const { setup } = useSession();
   const data = useMemo(() => TRAINING_TYPES.slice(0, 6), []);
   const bgColor = isDark ? '#060A18' : '#0A1224';
+
+  // Get the selected training type title
+  const selectedTrainingTitle = useMemo(() => {
+    const trainingType = TRAINING_TYPES.find(t => t.id === setup.typeId);
+    return trainingType?.title ?? 'Custom Training';
+  }, [setup.typeId]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: bgColor }]}>
       <FlatList
         contentContainerStyle={styles.grid}
         data={data}
-        keyExtractor={(item) => item.id}
+        keyExtractor={item => item.id}
         numColumns={2}
         scrollEnabled={false}
         ListFooterComponent={
           <Pressable style={styles.quickStartBtn} onPress={onStart}>
             <Text style={styles.quickStartText}>Quick Start</Text>
             <View style={styles.quickChipsRow}>
-              <QuickChip label="3 min" />
-              <QuickChip label="5 middle" active />
-              <QuickChip label="Pro" />
+              <QuickChip label={`${setup.durationMin} min`} />
+              <QuickChip label={setup.difficulty} active />
+              <QuickChip label={selectedTrainingTitle} />
             </View>
           </Pressable>
         }
@@ -83,12 +89,7 @@ const QuickChip: React.FC<{ label: string; active?: boolean }> = ({
       active ? styles.quickChipActive : styles.quickChipGhost,
     ]}
   >
-    <Text
-      style={[
-        styles.quickChipText,
-        active && styles.quickChipTextActive,
-      ]}
-    >
+    <Text style={[styles.quickChipText, active && styles.quickChipTextActive]}>
       {label}
     </Text>
   </View>
