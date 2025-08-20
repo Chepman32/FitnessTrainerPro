@@ -69,13 +69,6 @@ export const HomeScreen: React.FC<Props> = ({ onSelect, onStart }) => {
           </Pressable>
         )}
       />
-
-<View style={styles.bottomBarWrap}>
-  <TabButton icon="home" label="Home" active />
-  <TabButton icon="library" label="Library" />
-  <TabButton icon="heart" label="Favorites" />
-  <TabButton icon="time" label="History" />
-</View>
     </SafeAreaView>
   );
 };
