@@ -14,7 +14,7 @@ type Props = {
   onStart?: () => void;
 };
 
-const DURATIONS: Array<3 | 5 | 10 | 15 | 20> = [3, 5, 10, 15, 20];
+const DURATIONS: Array<0.05 | 3 | 5 | 10 | 15 | 20> = [0.05, 3, 5, 10, 15, 20]; // 0.05 = 3 seconds
 const DIFFICULTIES = [
   'Light',
   'Easy',
@@ -28,11 +28,11 @@ export const SetupScreen: React.FC<Props> = ({ onStart }) => {
   const { setup, setSetup } = useSession();
 
   const [useCustom, setUseCustom] = useState<boolean>(
-    ![3, 5, 10, 15, 20].includes(Number(setup.durationMin)),
+    ![0.05, 3, 5, 10, 15, 20].includes(Number(setup.durationMin)),
   );
   const [customMin, setCustomMin] = useState<number>(
     typeof setup.durationMin === 'number' &&
-      ![3, 5, 10, 15, 20].includes(Number(setup.durationMin))
+      ![0.05, 3, 5, 10, 15, 20].includes(Number(setup.durationMin))
       ? setup.durationMin
       : 25,
   );
@@ -50,7 +50,7 @@ export const SetupScreen: React.FC<Props> = ({ onStart }) => {
     ? customMin
     : (setup.durationMin as number);
   const canStart =
-    selectedDuration >= 1 &&
+    selectedDuration >= 0.05 &&
     selectedDuration <= 180 &&
     !!setup.difficulty &&
     !!setup.typeId;
@@ -102,10 +102,11 @@ export const SetupScreen: React.FC<Props> = ({ onStart }) => {
         >
           {DURATIONS.map(min => {
             const active = !useCustom && setup.durationMin === min;
+            const label = min === 0.05 ? '3 sec' : `${min} min`;
             return (
               <Chip
                 key={min}
-                label={`${min} min`}
+                label={label}
                 active={active}
                 onPress={() => {
                   setUseCustom(false);

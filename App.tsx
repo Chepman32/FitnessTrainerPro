@@ -27,7 +27,14 @@ const Tab = createBottomTabNavigator();
 function PlaceholderScreen({ title }: { title: string }) {
   return (
     <SafeAreaProvider>
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#060A18' }}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: '#060A18',
+        }}
+      >
         <Text style={{ color: 'white', fontSize: 24 }}>{title}</Text>
       </View>
     </SafeAreaProvider>
@@ -61,7 +68,7 @@ function HomeTabs() {
               setSetup({ typeId: t.id });
               navigation.navigate('setup');
             }}
-            onStart={() => navigation.navigate('setup')}
+            onStart={() => navigation.navigate('training')}
           />
         )}
       </Tab.Screen>
@@ -101,9 +108,15 @@ function HomeTabs() {
 
 function AppStack() {
   return (
-    <Stack.Navigator initialRouteName="home" screenOptions={{ headerShown: false }}>
+    <Stack.Navigator
+      initialRouteName="home"
+      screenOptions={{ headerShown: false }}
+    >
       <Stack.Screen name="home" component={HomeTabs} />
-      <Stack.Screen name="setup" options={{ headerShown: true, title: 'Setup' }}>
+      <Stack.Screen
+        name="setup"
+        options={{ headerShown: true, title: 'Setup' }}
+      >
         {({ navigation }) => (
           <SetupScreen onStart={() => navigation.navigate('training')} />
         )}
