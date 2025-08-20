@@ -8,6 +8,7 @@ import HomeScreen from './src/screens/HomeScreen';
 import SetupScreen from './src/screens/SetupScreen';
 import TrainingScreen from './src/screens/TrainingScreen';
 import DoneScreen from './src/screens/DoneScreen';
+import LibraryScreen from './src/screens/LibraryScreen';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -80,7 +81,18 @@ function HomeTabs() {
           ),
         }}
       >
-        {() => <PlaceholderScreen title="Library" />}
+        {({ navigation }) => (
+          <LibraryScreen
+            onStartExercise={exerciseId => {
+              setSetup({
+                typeId: exerciseId,
+                durationMin: 5,
+                difficulty: 'Middle',
+              });
+              navigation.navigate('setup');
+            }}
+          />
+        )}
       </Tab.Screen>
       <Tab.Screen
         name="Favorites"
