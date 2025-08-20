@@ -14,7 +14,7 @@ type Props = {
   onStart?: () => void;
 };
 
-const DURATIONS: Array<3 | 5 | 10> = [3, 5, 10];
+const DURATIONS: Array<3 | 5 | 10 | 15 | 20> = [3, 5, 10, 15, 20];
 const DIFFICULTIES = [
   'Light',
   'Easy',
@@ -28,13 +28,13 @@ export const SetupScreen: React.FC<Props> = ({ onStart }) => {
   const { setup, setSetup } = useSession();
 
   const [useCustom, setUseCustom] = useState<boolean>(
-    ![3, 5, 10].includes(Number(setup.durationMin)),
+    ![3, 5, 10, 15, 20].includes(Number(setup.durationMin)),
   );
   const [customMin, setCustomMin] = useState<number>(
     typeof setup.durationMin === 'number' &&
-      ![3, 5, 10].includes(Number(setup.durationMin))
+      ![3, 5, 10, 15, 20].includes(Number(setup.durationMin))
       ? setup.durationMin
-      : 10,
+      : 25,
   );
 
   const selectedTypeTitle = useMemo(() => {
@@ -79,14 +79,13 @@ export const SetupScreen: React.FC<Props> = ({ onStart }) => {
             );
           })}
           <Chip
-            label="Middle"
+            label="Custom"
             active={useCustom}
             onPress={() => {
               setUseCustom(true);
               setSetup({ durationMin: customMin });
             }}
           />
-          <Chip label="Stunt" active={false} onPress={() => {}} />
         </ScrollView>
 
         {useCustom && (
@@ -95,24 +94,24 @@ export const SetupScreen: React.FC<Props> = ({ onStart }) => {
               accessibilityLabel="Decrease minutes"
               style={[styles.stepperBtn, styles.stepperGhost]}
               onPress={() => {
-                const v = Math.max(1, Math.floor(customMin - 1));
+                const v = Math.max(5, customMin - 5);
                 setCustomMin(v);
                 setSetup({ durationMin: v });
               }}
             >
-              <Text>-</Text>
+              <Text style={styles.stepperBtnText}>-5</Text>
             </Pressable>
             <Text style={styles.stepperValue}>{customMin} min</Text>
             <Pressable
               accessibilityLabel="Increase minutes"
               style={[styles.stepperBtn, styles.stepperGhost]}
               onPress={() => {
-                const v = Math.min(180, Math.floor(customMin + 1));
+                const v = Math.min(180, customMin + 5);
                 setCustomMin(v);
                 setSetup({ durationMin: v });
               }}
             >
-              <Text>+</Text>
+              <Text style={styles.stepperBtnText}>+5</Text>
             </Pressable>
           </View>
         )}
@@ -177,7 +176,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: '800',
+    fontWeight: '600',
     textAlign: 'center',
     color: '#000',
   },
@@ -226,8 +225,15 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 20,
     borderWidth: StyleSheet.hairlineWidth,
+    minWidth: 50,
+    alignItems: 'center',
   },
   stepperGhost: { borderColor: '#5B9BFF' },
+  stepperBtnText: {
+    color: '#5B9BFF',
+    fontWeight: '600',
+    fontSize: 16,
+  },
   stepperValue: {
     fontSize: 16,
     fontWeight: '700',
