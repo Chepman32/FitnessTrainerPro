@@ -38,26 +38,26 @@ export const TrainingScreen: React.FC<Props> = ({ onComplete, onExit }) => {
   // Countdown effect
   useEffect(() => {
     if (showCountdown && countdown > 0) {
-      // Reset animation values for slide-in-back effect
-      countdownScale.setValue(0.3);
-      countdownOpacity.setValue(0);
-      countdownTranslateY.setValue(-50);
+      // Reset animation values for slide-back effect (start large and in front)
+      countdownScale.setValue(1.5);
+      countdownOpacity.setValue(1);
+      countdownTranslateY.setValue(0);
 
-      // Animate digit dropping from behind the screen
+      // Animate digit dropping back into the screen (getting smaller and moving away)
       Animated.parallel([
         Animated.spring(countdownScale, {
-          toValue: 1,
+          toValue: 0.3,
           tension: 100,
           friction: 8,
           useNativeDriver: true,
         }),
         Animated.timing(countdownOpacity, {
-          toValue: 1,
-          duration: 400,
+          toValue: 0,
+          duration: 800,
           useNativeDriver: true,
         }),
         Animated.spring(countdownTranslateY, {
-          toValue: 0,
+          toValue: 50,
           tension: 100,
           friction: 8,
           useNativeDriver: true,
