@@ -1,7 +1,33 @@
 import React, { useMemo } from 'react';
-import { FlatList, Pressable, SafeAreaView, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import {
+  FlatList,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  useColorScheme,
+  View,
+} from 'react-native';
 import { TRAINING_TYPES, TrainingType } from '../data/trainingTypes';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import ExerciseIcon from '../components/ExerciseIcons';
+
+const TabButton: React.FC<{
+  icon: string;
+  label: string;
+  active?: boolean;
+}> = ({ icon, label, active }) => (
+  <Pressable style={styles.tabItem}>
+    <Ionicons
+      name={icon}
+      size={20}
+      color={active ? 'white' : 'rgba(255,255,255,0.6)'}
+    />
+    <Text style={active ? styles.tabTextActive : styles.tabText}>
+      {label}
+    </Text>
+  </Pressable>
+);
 
 type Props = {
   onSelect?: (t: TrainingType) => void;
@@ -10,29 +36,32 @@ type Props = {
 
 export const HomeScreen: React.FC<Props> = ({ onSelect, onStart }) => {
   const isDark = useColorScheme() === 'dark';
-  const data = useMemo(() => TRAINING_TYPES.slice(0, 8), []);
-  const bgTop = isDark ? '#060A18' : '#0A1224';
-  const bgBottom = isDark ? '#0B1020' : '#0F172A';
+  const data = useMemo(() => TRAINING_TYPES.slice(0, 6), []);
+  const bgColor = isDark ? '#060A18' : '#0A1224';
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: bgBottom }]}>
-      <View style={[styles.headerWrap, { backgroundColor: bgTop }]}>
-        <Text style={styles.quickTitle}>Quick Start</Text>
-        <View style={styles.quickChipsRow}>
-          <QuickChip label="3 min" active />
-          <QuickChip label="5 middle" />
-          <QuickChip label="Pro" />
-        </View>
-      </View>
-
+    <SafeAreaView style={[styles.container, { backgroundColor: bgColor }]}>
       <FlatList
         contentContainerStyle={styles.grid}
         data={data}
-        keyExtractor={item => item.id}
+        keyExtractor={(item) => item.id}
         numColumns={2}
         scrollEnabled={false}
+        ListFooterComponent={
+          <Pressable style={styles.quickStartBtn} onPress={onStart}>
+            <Text style={styles.quickStartText}>Quick Start</Text>
+            <View style={styles.quickChipsRow}>
+              <QuickChip label="3 min" />
+              <QuickChip label="5 middle" active />
+              <QuickChip label="Pro" />
+            </View>
+          </Pressable>
+        }
         renderItem={({ item, index }) => (
-          <Pressable style={[styles.card, gradientByIndex(index)]} onPress={() => onSelect?.(item)}>
+          <Pressable
+            style={[styles.card, gradientByIndex(index)]}
+            onPress={() => onSelect?.(item)}
+          >
             <View style={styles.cardIconWrap}>
               <ExerciseIcon id={item.id as any} />
             </View>
@@ -41,23 +70,34 @@ export const HomeScreen: React.FC<Props> = ({ onSelect, onStart }) => {
         )}
       />
 
-      <View style={styles.bottomBarWrap}>
-        <Pressable style={styles.tabItemActive}><Text style={styles.tabTextActive}>Home</Text></Pressable>
-        <Pressable style={styles.tabItem}><Text style={styles.tabText}>Library</Text></Pressable>
-        <Pressable style={styles.tabItem}><Text style={styles.tabText}>Favorites</Text></Pressable>
-        <Pressable style={styles.tabItem}><Text style={styles.tabText}>History</Text></Pressable>
-        <Pressable style={styles.tabItem}><Text style={styles.tabText}>Settings</Text></Pressable>
-        <Pressable style={styles.fabStart} onPress={onStart} accessibilityLabel="Start">
-          <Text style={styles.fabStartText}>Start</Text>
-        </Pressable>
-      </View>
+<View style={styles.bottomBarWrap}>
+  <TabButton icon="home" label="Home" active />
+  <TabButton icon="library" label="Library" />
+  <TabButton icon="heart" label="Favorites" />
+  <TabButton icon="time" label="History" />
+</View>
     </SafeAreaView>
   );
 };
 
-const QuickChip: React.FC<{ label: string; active?: boolean }> = ({ label, active }) => (
-  <View style={[styles.quickChip, active ? styles.quickChipActive : styles.quickChipGhost]}>
-    <Text style={[styles.quickChipText, active && styles.quickChipTextActive]}>{label}</Text>
+const QuickChip: React.FC<{ label: string; active?: boolean }> = ({
+  label,
+  active,
+}) => (
+  <View
+    style={[
+      styles.quickChip,
+      active ? styles.quickChipActive : styles.quickChipGhost,
+    ]}
+  >
+    <Text
+      style={[
+        styles.quickChipText,
+        active && styles.quickChipTextActive,
+      ]}
+    >
+      {label}
+    </Text>
   </View>
 );
 
@@ -75,30 +115,77 @@ const gradientByIndex = (i: number) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  headerWrap: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12 },
-  quickTitle: { fontSize: 34, fontWeight: '800', color: 'white' },
-  quickChipsRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
-  quickChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth },
-  quickChipGhost: { borderColor: 'rgba(255,255,255,0.25)', backgroundColor: 'rgba(255,255,255,0.06)' },
-  quickChipActive: { borderColor: 'transparent', backgroundColor: 'rgba(255,255,255,0.18)' },
-  quickChipText: { color: 'rgba(255,255,255,0.85)', fontWeight: '700' },
-  quickChipTextActive: { color: 'white' },
+  grid: {
+    paddingHorizontal: 12,
+    paddingBottom: 120,
+    paddingTop: 12,
+  },
 
-  grid: { paddingHorizontal: 12, paddingBottom: 100 },
   card: {
     flex: 1,
     margin: 6,
     borderRadius: 24,
     padding: 18,
-    minHeight: 144,
+    minHeight: 160,
     justifyContent: 'flex-end',
     shadowColor: '#000',
     shadowOpacity: 0.2,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 6 },
   },
-  cardIconWrap: { position: 'absolute', top: 12, right: 12, opacity: 0.9 },
-  cardTitle: { color: 'white', fontSize: 18, fontWeight: '700' },
+  cardIconWrap: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    opacity: 0.9,
+  },
+  cardTitle: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+
+  quickStartBtn: {
+    backgroundColor: '#5B9BFF',
+    borderRadius: 24,
+    paddingVertical: 20,
+    paddingHorizontal: 24,
+    marginTop: 12,
+    alignItems: 'center',
+  },
+  quickStartText: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: '800',
+    marginBottom: 10,
+  },
+  quickChipsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'center',
+  },
+  quickChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  quickChipGhost: {
+    borderColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
+  quickChipActive: {
+    borderColor: 'transparent',
+    backgroundColor: 'rgba(255,255,255,0.18)',
+  },
+  quickChipText: {
+    color: 'rgba(255,255,255,0.85)',
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  quickChipTextActive: {
+    color: 'white',
+  },
 
   bottomBarWrap: {
     position: 'absolute',
@@ -111,22 +198,27 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(10,15,25,0.95)',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    justifyContent: 'space-around',
   },
-  tabItem: { flex: 1, alignItems: 'center', paddingVertical: 8 },
-  tabItemActive: { flex: 1, alignItems: 'center', paddingVertical: 8 },
-  tabText: { color: 'rgba(255,255,255,0.7)', fontSize: 12 },
-  tabTextActive: { color: 'white', fontSize: 12, fontWeight: '700' },
-  fabStart: {
-    position: 'absolute',
-    right: 12,
-    bottom: 18,
-    backgroundColor: '#5B9BFF',
-    borderRadius: 22,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+  tabItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 6,
   },
-  fabStartText: { color: 'white', fontWeight: '800' },
+  tabItemActive: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  tabText: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 12,
+  },
+  tabTextActive: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '700',
+  },
 });
 
 export default HomeScreen;
