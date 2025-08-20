@@ -61,6 +61,7 @@ function AppStack() {
               setSetup({ typeId: t.id });
               navigation.navigate('setup');
             }}
+            onStart={() => navigation.navigate('setup')}
           />
         )}
       </Stack.Screen>
