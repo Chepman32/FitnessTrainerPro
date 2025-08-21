@@ -1,203 +1,270 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import {
-  SafeAreaView,
-  StyleSheet,
-  Text,
   View,
-  Pressable,
-  ScrollView,
+  Text,
   FlatList,
+  RefreshControl,
+  StyleSheet,
+  useColorScheme,
+  SafeAreaView,
+  StatusBar,
+  Pressable,
 } from 'react-native';
-import { useSession } from '../state/SessionContext';
-import { TRAINING_TYPES } from '../data/trainingTypes';
-import ExerciseIcon from '../components/ExerciseIcons';
+import { LibrarySection, Content } from '../types/library';
+import { useLibrary } from '../state/LibraryContext';
+import { useUserProgress } from '../state/UserProgressContext';
+import { SearchBar } from '../components/library/SearchBar';
+import { FilterBar } from '../components/library/FilterBar';
+import { OfflineBanner } from '../components/library/OfflineBanner';
+import { ContentShelf } from '../components/library/ContentShelf';
+import { ContentShelfSkeleton } from '../components/library/OptimizedContentShelf';
 
-type Muscle = 'full' | 'upper' | 'lower' | 'core' | 'cardio' | 'flexibility';
-
-const MUSCLE_GROUPS: { key: Muscle; label: string }[] = [
-  { key: 'full', label: 'Full body' },
-  { key: 'upper', label: 'Upper body' },
-  { key: 'lower', label: 'Lower body' },
-  { key: 'core', label: 'Core' },
-  { key: 'cardio', label: 'Cardio' },
-  { key: 'flexibility', label: 'Flexibility' },
-];
-
-type Props = {
-  onStartExercise?: (exerciseId: string) => void;
+type LibraryScreenProps = {
+  onContentPress?: (content: Content) => void;
+  onSeeAllPress?: (section: LibrarySection) => void;
 };
 
-export const LibraryScreen: React.FC<Props> = ({ onStartExercise }) => {
-  const { setup } = useSession();
-  const [selectedMuscle, setSelectedMuscle] = React.useState<Muscle | null>(
-    null,
+export const LibraryScreen: React.FC<LibraryScreenProps> = ({
+  onContentPress,
+  onSeeAllPress,
+}) => {
+  const isDark = useColorScheme() === 'dark';
+  const { state: libraryState, actions: libraryActions } = useLibrary();
+  const { state: progressState } = useUserProgress();
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  const { sections, isLoading, error, searchQuery } = libraryState;
+
+  // Initial load
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        await libraryActions.refreshLibrary();
+      } finally {
+        setIsInitialLoad(false);
+      }
+    };
+
+    loadInitialData();
+  }, []);
+
+  // Handle pull to refresh
+  const handleRefresh = useCallback(async () => {
+    await libraryActions.refreshLibrary();
+  }, [libraryActions]);
+
+  // Handle content press
+  const handleContentPress = useCallback(
+    (content: Content) => {
+      onContentPress?.(content);
+    },
+    [onContentPress],
   );
 
-  // Show only specific exercises to match reference
-  const filteredExercises = useMemo(() => {
-    const referenceExercises = [
-      'pushups',
-      'squats',
-      'plank',
-      'crunches',
-      'burpees',
-    ];
+  // Handle see all press
+  const handleSeeAllPress = useCallback(
+    (section: LibrarySection) => {
+      onSeeAllPress?.(section);
+    },
+    [onSeeAllPress],
+  );
 
-    if (!selectedMuscle) {
-      return TRAINING_TYPES.filter(exercise =>
-        referenceExercises.includes(exercise.id),
+  // Prepare sections with continue items
+  const sectionsWithContinue = React.useMemo(() => {
+    if (!sections.length) return [];
+
+    return sections.map(section => {
+      if (section.type === 'continue') {
+        // Get continue items from progress state
+        const continueItems = progressState.userProgress
+          ? Object.values(progressState.userProgress)
+              .filter(
+                progress =>
+                  progress.progressPercent > 0 &&
+                  progress.progressPercent < 100 &&
+                  !progress.completedAt,
+              )
+              .sort(
+                (a, b) =>
+                  new Date(b.lastAccessedAt).getTime() -
+                  new Date(a.lastAccessedAt).getTime(),
+              )
+              .slice(0, 10)
+          : [];
+
+        // Convert progress items to content items (simplified for now)
+        const continueContent: Content[] = continueItems.map(
+          progress =>
+            ({
+              id: progress.entityId,
+              type: progress.entityType,
+              title: `Continue ${progress.entityType}`,
+              premium: false,
+              tags: [],
+              createdAt: progress.lastAccessedAt,
+              updatedAt: progress.lastAccessedAt,
+              // Add type-specific properties as needed
+            } as Content),
+        );
+
+        return {
+          ...section,
+          items: continueContent,
+        };
+      }
+      return section;
+    });
+  }, [sections, progressState.userProgress]);
+
+  // Render section item
+  const renderSection = useCallback(
+    ({ item: section }: { item: LibrarySection }) => (
+      <ContentShelf
+        key={section.id}
+        section={section}
+        onContentPress={handleContentPress}
+        onSeeAllPress={handleSeeAllPress}
+      />
+    ),
+    [handleContentPress, handleSeeAllPress],
+  );
+
+  // Render loading skeleton
+  const renderLoadingSkeleton = () => (
+    <View>
+      <ContentShelfSkeleton title="Continue" />
+      <ContentShelfSkeleton title="Recommended for you" />
+      <ContentShelfSkeleton title="Quick Start" />
+      <ContentShelfSkeleton title="Programs" />
+      <ContentShelfSkeleton title="Challenges" />
+    </View>
+  );
+
+  // Render header components
+  const renderHeader = () => (
+    <View>
+      <OfflineBanner />
+      <SearchBar />
+      <FilterBar />
+    </View>
+  );
+
+  const backgroundColor = isDark ? '#000000' : '#FFFFFF';
+  const statusBarStyle = isDark ? 'light-content' : 'dark-content';
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor }]}>
+      <StatusBar barStyle={statusBarStyle} backgroundColor={backgroundColor} />
+
+      {isInitialLoad ? (
+        <View style={styles.content}>
+          {renderHeader()}
+          {renderLoadingSkeleton()}
+        </View>
+      ) : (
+        <FlatList
+          data={sectionsWithContinue}
+          keyExtractor={item => item.id}
+          renderItem={renderSection}
+          ListHeaderComponent={renderHeader}
+          refreshControl={
+            <RefreshControl
+              refreshing={isLoading && !isInitialLoad}
+              onRefresh={handleRefresh}
+              tintColor={isDark ? '#5B9BFF' : '#5B9BFF'}
+              colors={['#5B9BFF']}
+            />
+          }
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={3}
+          windowSize={5}
+          initialNumToRender={3}
+          getItemLayout={(data, index) => ({
+            length: 300, // Approximate height of each section
+            offset: 300 * index,
+            index,
+          })}
+        />
+      )}
+    </SafeAreaView>
+  );
+};
+
+// Error Boundary Component
+export class LibraryErrorBoundary extends React.Component<
+  React.PropsWithChildren<{}>,
+  { hasError: boolean; error?: Error }
+> {
+  constructor(props: React.PropsWithChildren<{}>) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('LibraryScreen Error:', error, errorInfo);
+    // In a real app, you would log this to your error reporting service
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <LibraryErrorFallback
+          error={this.state.error}
+          onRetry={() => this.setState({ hasError: false, error: undefined })}
+        />
       );
     }
 
-    // Simple mapping of exercises to muscle groups
-    const muscleMap: Record<string, Muscle[]> = {
-      pushups: ['upper', 'full'],
-      plank: ['core', 'full'],
-      squats: ['lower', 'full'],
-      burpees: ['full', 'cardio'],
-      lunges: ['lower'],
-      crunches: ['core'],
-      mountain_climbers: ['core', 'cardio', 'full'],
-      jumping_jacks: ['cardio', 'full'],
-    };
+    return this.props.children;
+  }
+}
 
-    return TRAINING_TYPES.filter(
-      exercise =>
-        referenceExercises.includes(exercise.id) &&
-        muscleMap[exercise.id]?.includes(selectedMuscle),
-    );
-  }, [selectedMuscle]);
-
-  const handleMusclePress = (muscle: Muscle) => {
-    setSelectedMuscle(selectedMuscle === muscle ? null : muscle);
-  };
-
-  const handleNoEquipmentPress = () => {
-    // Filter to show bodyweight exercises
-    setSelectedMuscle(null);
-  };
+// Error Fallback Component
+const LibraryErrorFallback: React.FC<{
+  error?: Error;
+  onRetry: () => void;
+}> = ({ error, onRetry }) => {
+  const isDark = useColorScheme() === 'dark';
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Library</Text>
-        <Pressable style={styles.overflowButton}>
-          <Text style={styles.overflowText}>•••</Text>
-        </Pressable>
-      </View>
-
-      <FlatList
-        data={filteredExercises}
-        keyExtractor={item => item.id}
-        showsVerticalScrollIndicator={false}
-        ListHeaderComponent={
-          <View>
-            {/* Hero Card */}
-            <Pressable style={styles.heroCard} onPress={handleNoEquipmentPress}>
-              <View style={styles.heroContent}>
-                <Text style={styles.heroTitle}>No equipment</Text>
-                <Text style={styles.heroSubtitle}>Upper body</Text>
-              </View>
-              <View style={styles.heroIcon}>
-                <View style={styles.runningFigure}>
-                  <View style={styles.runnerHead} />
-                  <View style={styles.runnerBody} />
-                  <View style={styles.runnerArmBack} />
-                  <View style={styles.runnerArmFront} />
-                  <View style={styles.runnerLegBack} />
-                  <View style={styles.runnerLegFront} />
-                </View>
-              </View>
-            </Pressable>
-
-            {/* Section Title */}
-            <Text style={styles.sectionTitle}>By muscle group</Text>
-
-            {/* Muscle Filter Chips */}
-            <View style={styles.chipsContainer}>
-              <View style={styles.chipRow}>
-                {MUSCLE_GROUPS.slice(0, 3).map(muscle => (
-                  <Pressable
-                    key={muscle.key}
-                    style={[
-                      styles.chip,
-                      selectedMuscle === muscle.key && styles.chipActive,
-                    ]}
-                    onPress={() => handleMusclePress(muscle.key)}
-                  >
-                    <Text
-                      style={[
-                        styles.chipText,
-                        selectedMuscle === muscle.key && styles.chipTextActive,
-                      ]}
-                    >
-                      {muscle.label}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-              <View style={styles.chipRow}>
-                {MUSCLE_GROUPS.slice(3, 6).map(muscle => (
-                  <Pressable
-                    key={muscle.key}
-                    style={[
-                      styles.chip,
-                      selectedMuscle === muscle.key && styles.chipActive,
-                    ]}
-                    onPress={() => handleMusclePress(muscle.key)}
-                  >
-                    <Text
-                      style={[
-                        styles.chipText,
-                        selectedMuscle === muscle.key && styles.chipTextActive,
-                      ]}
-                    >
-                      {muscle.label}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            </View>
-          </View>
-        }
-        renderItem={({ item, index }) => {
-          // Match the exact text from reference
-          let rightText = '5 min';
-          if (item.id === 'plank') {
-            rightText = 'Start 5 min';
-          } else if (item.id === 'squats' || item.id === 'crunches') {
-            rightText = '5 m';
-          }
-
-          return (
-            <Pressable
-              style={styles.exerciseRow}
-              onPress={() => onStartExercise?.(item.id)}
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: isDark ? '#000' : '#FFF' }]}
+    >
+      <View style={styles.errorContainer}>
+        <View style={styles.errorContent}>
+          <Text
+            style={[styles.errorTitle, { color: isDark ? '#FFF' : '#000' }]}
+          >
+            Something went wrong
+          </Text>
+          <Text
+            style={[styles.errorMessage, { color: isDark ? '#AAA' : '#666' }]}
+          >
+            We're having trouble loading the library. Please try again.
+          </Text>
+          {__DEV__ && error && (
+            <Text
+              style={[styles.errorDetails, { color: isDark ? '#666' : '#999' }]}
             >
-              <View style={styles.exerciseInfo}>
-                <Text style={styles.exerciseTitle}>{item.title}</Text>
-              </View>
-              <View style={styles.exerciseRight}>
-                <Text style={styles.durationText}>{rightText}</Text>
-                <Text style={styles.chevron}>›</Text>
-              </View>
-            </Pressable>
-          );
-        }}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>
-              No exercises match your filters.
+              {error.message}
             </Text>
-            <Pressable onPress={() => setSelectedMuscle(null)}>
-              <Text style={styles.clearFiltersText}>Clear filters</Text>
-            </Pressable>
-          </View>
-        }
-        contentContainerStyle={styles.listContent}
-      />
+          )}
+          <Pressable
+            style={styles.retryButton}
+            onPress={onRetry}
+            accessibilityRole="button"
+            accessibilityLabel="Retry loading library"
+          >
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </Pressable>
+        </View>
+      </View>
     </SafeAreaView>
   );
 };
@@ -205,215 +272,53 @@ export const LibraryScreen: React.FC<Props> = ({ onStartExercise }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0B1020',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
-  },
-  title: {
-    color: 'white',
-    fontSize: 28,
-    fontWeight: '800',
-  },
-  overflowButton: {
-    padding: 8,
-  },
-  overflowText: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  heroCard: {
-    marginHorizontal: 16,
-    marginBottom: 20,
-    height: 120,
-    borderRadius: 16,
-    padding: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#4c1d95',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  heroContent: {
+  content: {
     flex: 1,
-  },
-  heroTitle: {
-    color: 'white',
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 0,
-  },
-  heroSubtitle: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 14,
-    marginTop: 2,
-  },
-  heroIcon: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 60,
-    height: 60,
-  },
-  runningFigure: {
-    width: 50,
-    height: 50,
-    position: 'relative',
-  },
-  runnerHead: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.8)',
-    backgroundColor: 'transparent',
-    position: 'absolute',
-    top: 5,
-    left: 20,
-  },
-  runnerBody: {
-    width: 2,
-    height: 15,
-    backgroundColor: 'rgba(255,255,255,0.8)',
-    position: 'absolute',
-    top: 17,
-    left: 24,
-    borderRadius: 1,
-  },
-  runnerArmBack: {
-    width: 12,
-    height: 2,
-    backgroundColor: 'rgba(255,255,255,0.8)',
-    position: 'absolute',
-    top: 20,
-    left: 15,
-    borderRadius: 1,
-    transform: [{ rotate: '-30deg' }],
-  },
-  runnerArmFront: {
-    width: 12,
-    height: 2,
-    backgroundColor: 'rgba(255,255,255,0.8)',
-    position: 'absolute',
-    top: 22,
-    left: 25,
-    borderRadius: 1,
-    transform: [{ rotate: '45deg' }],
-  },
-  runnerLegBack: {
-    width: 12,
-    height: 2,
-    backgroundColor: 'rgba(255,255,255,0.8)',
-    position: 'absolute',
-    top: 32,
-    left: 15,
-    borderRadius: 1,
-    transform: [{ rotate: '30deg' }],
-  },
-  runnerLegFront: {
-    width: 12,
-    height: 2,
-    backgroundColor: 'rgba(255,255,255,0.8)',
-    position: 'absolute',
-    top: 35,
-    left: 25,
-    borderRadius: 1,
-    transform: [{ rotate: '-45deg' }],
-  },
-  sectionTitle: {
-    color: 'rgba(255,255,255,0.9)',
-    fontSize: 16,
-    fontWeight: '700',
-    marginHorizontal: 16,
-    marginBottom: 12,
-  },
-  chipsContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 24,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    marginBottom: 8,
-  },
-  chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  chipActive: {
-    backgroundColor: 'rgba(91,155,255,0.3)',
-  },
-  chipText: {
-    color: 'rgba(255,255,255,0.8)',
-    fontWeight: '500',
-    fontSize: 14,
-  },
-  chipTextActive: {
-    color: 'white',
-    fontWeight: '600',
-  },
-  exerciseRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-  },
-  exerciseInfo: {
-    flex: 1,
-  },
-  exerciseTitle: {
-    color: 'white',
-    fontSize: 17,
-    fontWeight: '500',
-  },
-  exerciseRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  durationText: {
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: 15,
-    fontWeight: '400',
-  },
-
-  chevron: {
-    color: 'rgba(255,255,255,0.3)',
-    fontSize: 16,
-    fontWeight: '300',
-  },
-  separator: {
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    marginLeft: 62,
-  },
-  emptyState: {
-    padding: 24,
-    alignItems: 'center',
-  },
-  emptyText: {
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: 16,
-    marginBottom: 8,
-  },
-  clearFiltersText: {
-    color: '#5B9BFF',
-    fontWeight: '700',
-    fontSize: 16,
   },
   listContent: {
-    paddingBottom: 24,
+    paddingBottom: 32,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  errorContent: {
+    alignItems: 'center',
+    gap: 16,
+  },
+  errorTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  errorMessage: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  errorDetails: {
+    fontSize: 12,
+    textAlign: 'center',
+    fontFamily: 'monospace',
+    marginTop: 8,
+  },
+  retryButton: {
+    backgroundColor: '#5B9BFF',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+    marginTop: 16,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
+
+// Note: Intentionally no default export to ensure consistent named import usage.
 
 export default LibraryScreen;

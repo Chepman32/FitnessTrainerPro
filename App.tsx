@@ -4,11 +4,14 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PreferencesProvider } from './src/state/PreferencesContext';
 import { SessionProvider, useSession } from './src/state/SessionContext';
+// Add Library and UserProgress providers
+import { LibraryProvider } from './src/state/LibraryContext';
+import { UserProgressProvider } from './src/state/UserProgressContext';
 import HomeScreen from './src/screens/HomeScreen';
 import SetupScreen from './src/screens/SetupScreen';
 import TrainingScreen from './src/screens/TrainingScreen';
 import DoneScreen from './src/screens/DoneScreen';
-import LibraryScreen from './src/screens/LibraryScreen';
+import { LibraryScreen } from './src/screens/LibraryScreen';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -81,17 +84,8 @@ function HomeTabs() {
           ),
         }}
       >
-        {({ navigation }) => (
-          <LibraryScreen
-            onStartExercise={exerciseId => {
-              setSetup({
-                typeId: exerciseId,
-                durationMin: 5,
-                difficulty: 'Middle',
-              });
-              navigation.navigate('setup');
-            }}
-          />
+        {() => (
+          <LibraryScreen />
         )}
       </Tab.Screen>
       <Tab.Screen
@@ -163,9 +157,13 @@ function App() {
         <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
         <PreferencesProvider>
           <SessionProvider>
-            <NavigationContainer>
-              <AppStack />
-            </NavigationContainer>
+            <LibraryProvider>
+              <UserProgressProvider>
+                <NavigationContainer>
+                  <AppStack />
+                </NavigationContainer>
+              </UserProgressProvider>
+            </LibraryProvider>
           </SessionProvider>
         </PreferencesProvider>
       </GestureHandlerRootView>
