@@ -33,6 +33,8 @@ export type Program = BaseContent & {
   goals: Goal[];
   totalWorkouts: number;
   estimatedCalories: number;
+  // Optional: Complex Training Program data for timed workouts
+  complexProgram?: import('../types/program').Program;
 };
 
 export type Challenge = BaseContent & {

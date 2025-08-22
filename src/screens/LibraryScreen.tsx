@@ -483,6 +483,12 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
                   imageStyle={styles.contentCardImageStyle}
                 >
                   <View style={styles.contentCardOverlay} />
+                  {/* Complex Training Program Badge */}
+                  {item.type === 'program' && (item as any).complexProgram && (
+                    <View style={styles.complexProgramBadge}>
+                      <Text style={styles.complexProgramBadgeText}>⏱️ TIMED</Text>
+                    </View>
+                  )}
                   <View style={styles.contentCardContent}>
                     <Text style={styles.contentCardTitle}>{item.title}</Text>
                     <Text style={styles.contentCardSubtitle}>
@@ -1007,6 +1013,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  complexProgramBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(0, 122, 255, 0.9)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  complexProgramBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  }
 });
 
 // Note: Intentionally no default export to ensure consistent named import usage.

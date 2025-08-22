@@ -1,5 +1,5 @@
 import React from 'react';
-import { StatusBar, useColorScheme, View, Text } from 'react-native';
+import { StatusBar, useColorScheme, View, Text, Alert } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PreferencesProvider } from './src/state/PreferencesContext';
@@ -10,11 +10,15 @@ import { UserProgressProvider } from './src/state/UserProgressContext';
 import { FavoritesProvider } from './src/state/FavoritesContext';
 import HomeScreen from './src/screens/HomeScreen';
 import SetupScreen from './src/screens/SetupScreen';
-import TrainingScreen from './src/screens/TrainingScreen';
+import { OriginalTrainingScreen } from './src/screens/OriginalTrainingScreen';
 import DoneScreen from './src/screens/DoneScreen';
 import { LibraryScreen } from './src/screens/LibraryScreen';
 import { ArticleDetailScreen } from './src/screens/ArticleDetailScreen';
 import { FavoritesScreen } from './src/screens/FavoritesScreen';
+import { ProgramStartScreen } from './src/screens/ProgramStartScreen';
+import { TrainingScreen as ComplexTrainingScreen } from './src/screens/TrainingScreen';
+import { ProgramFinishScreen } from './src/screens/ProgramFinishScreen';
+import { ProgramsTestScreen } from './src/screens/ProgramsTestScreen';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -28,6 +32,10 @@ type RootStackParamList = {
   training: undefined;
   done: undefined;
   articleDetail: { article: any };
+  programStart: { program: any };
+  complexTraining: { program: any; soundsEnabled: boolean; vibrationsEnabled: boolean };
+  programFinish: { completionData: any };
+  programsTest: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -40,6 +48,7 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
       case 'home': return '🏠';
       case 'library': return '📚';
       case 'favorites': return '❤️';
+      case 'programs': return '🎯';
       case 'history': return '🕐';
       default: return '📱';
     }
@@ -115,10 +124,35 @@ function HomeTabs() {
           <LibraryScreen 
             onContentPress={(content) => {
               console.log('Content pressed:', content.title, content.type);
+              if (content.type === 'program') {
+                console.log('Program details:', {
+                  hasComplexProgram: !!(content as any).complexProgram,
+                  weeks: (content as any).weeks,
+                  tags: (content as any).tags
+                });
+              }
               if (content.type === 'article') {
                 navigation.navigate('articleDetail', { article: content });
+              } else if (content.type === 'program' && (content as any).complexProgram) {
+                // Handle Complex Training Programs (timed workouts)
+                console.log('Starting Complex Training Program:', content.title);
+                navigation.navigate('programStart', { program: (content as any).complexProgram });
+              } else if (content.type === 'program') {
+                // Handle traditional programs (multi-week programs)
+                const program = content as any;
+                console.log('Traditional program tapped:', content.title);
+                console.log('This is a', program.weeks, 'week program with', program.totalWorkouts, 'workouts');
+                
+                Alert.alert(
+                  'Traditional Program',
+                  `"${content.title}" is a ${program.weeks}-week program with ${program.totalWorkouts} total workouts.\n\nFor immediate timed workouts with step-by-step guidance, check out the Programs tab (🎯).`,
+                  [
+                    { text: 'Go to Programs Tab', onPress: () => navigation.navigate('Programs') },
+                    { text: 'OK' }
+                  ]
+                );
               } else {
-                // Handle other content types (workouts, programs, challenges)
+                // Handle other content types (workouts, challenges)
                 console.log('Other content type tapped - detail screen not implemented yet');
               }
             }}
@@ -146,14 +180,21 @@ function HomeTabs() {
         )}
       </Tab.Screen>
       <Tab.Screen
-        name="History"
+        name="Programs"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon name="history" focused={focused} />
+            <TabIcon name="programs" focused={focused} />
           ),
         }}
       >
-        {() => <PlaceholderScreen title="History" />}
+        {({ navigation }) => (
+          <ProgramsTestScreen
+            onProgramSelect={(program) => {
+              navigation.navigate('programStart', { program });
+            }}
+            onBack={() => navigation.goBack()}
+          />
+        )}
       </Tab.Screen>
     </Tab.Navigator>
   );
@@ -176,7 +217,7 @@ function AppStack() {
       </Stack.Screen>
       <Stack.Screen name="training">
         {({ navigation }) => (
-          <TrainingScreen
+          <OriginalTrainingScreen
             onComplete={() => navigation.navigate('done')}
             onExit={() => navigation.navigate('home')}
           />
@@ -199,6 +240,58 @@ function AppStack() {
           <ArticleDetailScreen
             article={route.params.article}
             onBack={() => navigation.goBack()}
+          />
+        )}
+      </Stack.Screen>
+      <Stack.Screen 
+        name="programStart"
+        options={{ headerShown: false }}
+      >
+        {({ navigation, route }) => (
+          <ProgramStartScreen
+            program={route.params.program}
+            onStart={(soundsEnabled, vibrationsEnabled) => {
+              navigation.navigate('complexTraining', { 
+                program: route.params.program, 
+                soundsEnabled, 
+                vibrationsEnabled 
+              });
+            }}
+            onBack={() => navigation.goBack()}
+          />
+        )}
+      </Stack.Screen>
+      <Stack.Screen 
+        name="complexTraining"
+        options={{ headerShown: false }}
+      >
+        {({ navigation, route }) => (
+          <ComplexTrainingScreen
+            program={route.params.program}
+            soundsEnabled={route.params.soundsEnabled}
+            vibrationsEnabled={route.params.vibrationsEnabled}
+            onComplete={(completionData) => {
+              navigation.replace('programFinish', { completionData });
+            }}
+            onExit={() => navigation.goBack()}
+          />
+        )}
+      </Stack.Screen>
+      <Stack.Screen 
+        name="programFinish"
+        options={{ headerShown: false }}
+      >
+        {({ navigation, route }) => (
+          <ProgramFinishScreen
+            completionData={route.params.completionData}
+            onDone={() => navigation.navigate('home')}
+            onRepeat={() => {
+              navigation.replace('complexTraining', { 
+                program: route.params.completionData.program,
+                soundsEnabled: true,
+                vibrationsEnabled: true
+              });
+            }}
           />
         )}
       </Stack.Screen>

@@ -5,6 +5,12 @@ import {
   Article,
   LibrarySection,
 } from '../types/library';
+import { 
+  FULL_BODY_EXPRESS, 
+  CORE_CARDIO_MIX, 
+  SAMPLE_PROGRAMS 
+} from './samplePrograms';
+import { Program as TrainingProgram } from '../types/program';
 
 // Mock Programs
 export const MOCK_PROGRAMS: Program[] = [
@@ -384,8 +390,38 @@ const QUICK_START_ITEMS: Workout[] = [
 ];
 
 // Enhanced Programs
+// Convert Complex Training Programs to Library Programs
+const convertComplexToLibraryProgram = (complexProgram: TrainingProgram): Program => {
+  const totalDurationMinutes = Math.ceil((complexProgram.totalActiveSec + complexProgram.totalRestSec) / 60);
+  
+  return {
+    id: complexProgram.id,
+    type: 'program',
+    title: complexProgram.title,
+    coverUrl: complexProgram.thumbnailUrl || 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+    premium: complexProgram.difficulty >= 4, // Advanced programs are premium
+    tags: [...complexProgram.tags.map(tag => tag.toLowerCase().replace(/\s+/g, '-')), 'timed-workout', 'complex-program'],
+    createdAt: complexProgram.createdAt,
+    updatedAt: complexProgram.updatedAt,
+    weeks: 1, // These are single-session programs
+    sessionsPerWeek: 7, // Can be done daily
+    level: complexProgram.level,
+    equipment: ['none'], // All our sample programs use no equipment
+    locations: ['home'],
+    goals: complexProgram.tags.includes('Cardio') || complexProgram.tags.includes('HIIT') ? ['cardio', 'fat_loss'] : 
+           complexProgram.tags.includes('Strength') ? ['strength', 'muscle'] :
+           ['cardio', 'strength'],
+    totalWorkouts: 1,
+    estimatedCalories: complexProgram.estimatedCalories || 50,
+    // Add complex program data for the training functionality
+    complexProgram: complexProgram
+  };
+};
+
 const ENHANCED_PROGRAMS: Program[] = [
   ...MOCK_PROGRAMS,
+  // Add our Complex Training Programs first
+  ...SAMPLE_PROGRAMS.map(convertComplexToLibraryProgram),
   {
     id: 'program_4',
     type: 'program',
