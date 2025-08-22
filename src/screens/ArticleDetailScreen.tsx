@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,17 +11,45 @@ import {
   useColorScheme,
 } from 'react-native';
 import { Article } from '../types/library';
+import { useFavorites } from '../state/FavoritesContext';
 
 type ArticleDetailScreenProps = {
   article: Article;
   onBack?: () => void;
+  onFavoriteToggle?: (article: Article, isFavorited: boolean) => void;
 };
 
 export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
   article,
   onBack,
+  onFavoriteToggle,
 }) => {
   const isDark = useColorScheme() === 'dark';
+  const { state: favoritesState, actions: favoritesActions } = useFavorites();
+  const [isToggling, setIsToggling] = useState(false);
+
+  // Check if this article is favorited
+  const isFavorited = favoritesActions.isFavorited(article.id);
+
+  const handleFavoriteToggle = async () => {
+    if (isToggling) return; // Prevent double-taps
+    
+    setIsToggling(true);
+    try {
+      if (isFavorited) {
+        await favoritesActions.removeFavorite(article.id);
+      } else {
+        await favoritesActions.addFavorite(article);
+      }
+      
+      // Call the optional callback
+      onFavoriteToggle?.(article, !isFavorited);
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    } finally {
+      setIsToggling(false);
+    }
+  };
 
   const getArticleContent = (article: Article) => {
     // This would normally come from a content management system
@@ -149,7 +177,15 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
         <Text style={[styles.headerTitle, isDark && styles.headerTitleDark]} numberOfLines={1}>
           Article
         </Text>
-        <View style={styles.headerSpacer} />
+        <Pressable 
+          onPress={handleFavoriteToggle} 
+          style={[styles.favoriteButton, isToggling && styles.favoriteButtonDisabled]}
+          disabled={isToggling}
+        >
+          <Text style={[styles.favoriteIcon, isFavorited && styles.favoriteIconFilled]}>
+            {isToggling ? '💭' : (isFavorited ? '❤️' : '🤍')}
+          </Text>
+        </Pressable>
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -254,8 +290,23 @@ const styles = StyleSheet.create({
   headerTitleDark: {
     color: '#FFFFFF',
   },
-  headerSpacer: {
-    width: 60,
+  favoriteButton: {
+    paddingVertical: 8,
+    paddingLeft: 16,
+    paddingRight: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 60,
+  },
+  favoriteButtonDisabled: {
+    opacity: 0.6,
+  },
+  favoriteIcon: {
+    fontSize: 24,
+    textAlign: 'center',
+  },
+  favoriteIconFilled: {
+    opacity: 1,
   },
   scrollView: {
     flex: 1,

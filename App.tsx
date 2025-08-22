@@ -4,15 +4,17 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PreferencesProvider } from './src/state/PreferencesContext';
 import { SessionProvider, useSession } from './src/state/SessionContext';
-// Add Library and UserProgress providers
+// Add Library, UserProgress, and Favorites providers
 import { LibraryProvider } from './src/state/LibraryContext';
 import { UserProgressProvider } from './src/state/UserProgressContext';
+import { FavoritesProvider } from './src/state/FavoritesContext';
 import HomeScreen from './src/screens/HomeScreen';
 import SetupScreen from './src/screens/SetupScreen';
 import TrainingScreen from './src/screens/TrainingScreen';
 import DoneScreen from './src/screens/DoneScreen';
 import { LibraryScreen } from './src/screens/LibraryScreen';
 import { ArticleDetailScreen } from './src/screens/ArticleDetailScreen';
+import { FavoritesScreen } from './src/screens/FavoritesScreen';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -135,7 +137,13 @@ function HomeTabs() {
           ),
         }}
       >
-        {() => <PlaceholderScreen title="Favorites" />}
+        {({ navigation }) => (
+          <FavoritesScreen 
+            onArticlePress={(article) => {
+              navigation.navigate('articleDetail', { article });
+            }}
+          />
+        )}
       </Tab.Screen>
       <Tab.Screen
         name="History"
@@ -209,9 +217,11 @@ function App() {
           <SessionProvider>
             <LibraryProvider>
               <UserProgressProvider>
-                <NavigationContainer>
-                  <AppStack />
-                </NavigationContainer>
+                <FavoritesProvider>
+                  <NavigationContainer>
+                    <AppStack />
+                  </NavigationContainer>
+                </FavoritesProvider>
               </UserProgressProvider>
             </LibraryProvider>
           </SessionProvider>
