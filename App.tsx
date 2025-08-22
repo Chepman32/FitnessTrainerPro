@@ -12,21 +12,46 @@ import SetupScreen from './src/screens/SetupScreen';
 import TrainingScreen from './src/screens/TrainingScreen';
 import DoneScreen from './src/screens/DoneScreen';
 import { LibraryScreen } from './src/screens/LibraryScreen';
+import { ArticleDetailScreen } from './src/screens/ArticleDetailScreen';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StyleSheet } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+// Temporarily removing Ionicons import due to icon display issues
+// import Ionicons from 'react-native-vector-icons/Ionicons';
 
 type RootStackParamList = {
   home: undefined;
   setup: undefined;
   training: undefined;
   done: undefined;
+  articleDetail: { article: any };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
+
+// Temporary emoji icon component until vector icons are properly configured
+function TabIcon({ name, focused }: { name: string; focused: boolean }) {
+  const getIcon = () => {
+    switch (name) {
+      case 'home': return '🏠';
+      case 'library': return '📚';
+      case 'favorites': return '❤️';
+      case 'history': return '🕐';
+      default: return '📱';
+    }
+  };
+
+  return (
+    <Text style={[
+      styles.tabIcon,
+      focused ? styles.tabIconFocused : styles.tabIconUnfocused
+    ]}>
+      {getIcon()}
+    </Text>
+  );
+}
 
 function PlaceholderScreen({ title }: { title: string }) {
   return (
@@ -61,8 +86,8 @@ function HomeTabs() {
         name="HomeTab"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name="home" focused={focused} />
           ),
         }}
       >
@@ -79,20 +104,34 @@ function HomeTabs() {
       <Tab.Screen
         name="Library"
         options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="library-outline" size={size} color={color} />
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name="library" focused={focused} />
           ),
         }}
       >
-        {() => (
-          <LibraryScreen />
+        {({ navigation }) => (
+          <LibraryScreen 
+            onContentPress={(content) => {
+              console.log('Content pressed:', content.title, content.type);
+              if (content.type === 'article') {
+                navigation.navigate('articleDetail', { article: content });
+              } else {
+                // Handle other content types (workouts, programs, challenges)
+                console.log('Other content type tapped - detail screen not implemented yet');
+              }
+            }}
+            onSeeAllPress={(section) => {
+              console.log('See all pressed for section:', section.title);
+              // Later you can add navigation.navigate('SectionDetail', { section })
+            }}
+          />
         )}
       </Tab.Screen>
       <Tab.Screen
         name="Favorites"
         options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="heart-outline" size={size} color={color} />
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name="favorites" focused={focused} />
           ),
         }}
       >
@@ -101,8 +140,8 @@ function HomeTabs() {
       <Tab.Screen
         name="History"
         options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="time-outline" size={size} color={color} />
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name="history" focused={focused} />
           ),
         }}
       >
@@ -144,6 +183,17 @@ function AppStack() {
           />
         )}
       </Stack.Screen>
+      <Stack.Screen 
+        name="articleDetail"
+        options={{ headerShown: false }}
+      >
+        {({ navigation, route }) => (
+          <ArticleDetailScreen
+            article={route.params.article}
+            onBack={() => navigation.goBack()}
+          />
+        )}
+      </Stack.Screen>
     </Stack.Navigator>
   );
 }
@@ -173,6 +223,17 @@ function App() {
 
 const styles = StyleSheet.create({
   flex1: { flex: 1 },
+  tabIcon: {
+    textAlign: 'center',
+  },
+  tabIconFocused: {
+    fontSize: 26,
+    opacity: 1,
+  },
+  tabIconUnfocused: {
+    fontSize: 24,
+    opacity: 0.6,
+  },
 });
 
 export default App;

@@ -10,7 +10,8 @@ import {
   FlatList,
   Keyboard,
 } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+// Try with direct import
+import Icon from 'react-native-vector-icons/Ionicons';
 import { useLibrary } from '../../state/LibraryContext';
 import { libraryApi } from '../../services/libraryApi';
 import {
@@ -193,24 +194,16 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       accessibilityRole="button"
       accessibilityLabel={`Search for ${item.text}`}
     >
-      <Ionicons
-        name={item.type === 'recent' ? 'time-outline' : 'search-outline'}
-        size={16}
-        color={isDark ? '#CCCCCC' : '#666666'}
-        style={styles.suggestionIcon}
-      />
+      <Text style={styles.suggestionIconText}>
+        {item.type === 'recent' ? '🕒' : '🔍'}
+      </Text>
       <Text
         style={[styles.suggestionText, isDark && styles.suggestionTextDark]}
       >
         {item.text}
       </Text>
       {item.type === 'recent' && (
-        <Ionicons
-          name="arrow-up-outline"
-          size={16}
-          color={isDark ? '#CCCCCC' : '#666666'}
-          style={styles.suggestionAction}
-        />
+        <Text style={styles.suggestionArrowText}>↗</Text>
       )}
     </Pressable>
   );
@@ -225,12 +218,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           isFocused && styles.searchContainerFocused,
         ]}
       >
-        <Ionicons
-          name="search-outline"
-          size={20}
-          color={isDark ? '#CCCCCC' : '#666666'}
-          style={styles.searchIcon}
-        />
+        <Text style={styles.searchIconText}>🔍</Text>
 
         <TextInput
           ref={inputRef}
@@ -239,7 +227,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             isDark ? styles.searchInputDark : styles.searchInputLight,
           ]}
           placeholder="Find a workout, article..."
-          placeholderTextColor={isDark ? '#888888' : '#999999'}
+          placeholderTextColor="rgba(255, 255, 255, 0.6)"
           value={state.searchQuery}
           onChangeText={handleChangeText}
           onFocus={handleFocus}
@@ -257,11 +245,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             accessibilityRole="button"
             accessibilityLabel="Clear search"
           >
-            <Ionicons
-              name="close-circle"
-              size={20}
-              color={isDark ? '#CCCCCC' : '#666666'}
-            />
+            <Text style={styles.clearIconText}>✕</Text>
           </Pressable>
         )}
       </View>
@@ -326,20 +310,21 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 16,
-    marginVertical: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
+    marginHorizontal: 0,
+    marginVertical: 0,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderRadius: 16,
+    borderWidth: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   searchContainerLight: {
-    backgroundColor: '#F8F9FA',
-    borderColor: '#E5E5E5',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'transparent',
   },
   searchContainerDark: {
-    backgroundColor: '#2A2A2A',
-    borderColor: '#404040',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'transparent',
   },
   searchContainerFocused: {
     borderColor: '#5B9BFF',
@@ -353,15 +338,20 @@ const styles = StyleSheet.create({
   searchIcon: {
     marginRight: 12,
   },
+  searchIconText: {
+    fontSize: 20,
+    marginRight: 12,
+  },
 
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '400',
     paddingVertical: 0, // Remove default padding
+    color: '#FFFFFF',
   },
   searchInputLight: {
-    color: '#333333',
+    color: '#FFFFFF',
   },
   searchInputDark: {
     color: '#FFFFFF',
@@ -370,6 +360,11 @@ const styles = StyleSheet.create({
   clearButton: {
     marginLeft: 8,
     padding: 4,
+  },
+  clearIconText: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: 'bold',
   },
 
   suggestionsContainer: {
@@ -418,6 +413,10 @@ const styles = StyleSheet.create({
   suggestionIcon: {
     marginRight: 12,
   },
+  suggestionIconText: {
+    fontSize: 14,
+    marginRight: 12,
+  },
 
   suggestionText: {
     flex: 1,
@@ -429,6 +428,11 @@ const styles = StyleSheet.create({
   },
 
   suggestionAction: {
+    marginLeft: 8,
+  },
+  suggestionArrowText: {
+    fontSize: 14,
+    color: '#CCCCCC',
     marginLeft: 8,
   },
 
