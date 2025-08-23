@@ -32,18 +32,7 @@ export const ContentShelf: React.FC<ContentShelfProps> = ({
   error = null,
 }) => {
   const isDark = useColorScheme() === 'dark';
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const handleLoadMore = useCallback(async () => {
-    if (!section.hasMore || isLoadingMore || !onLoadMore) return;
-
-    setIsLoadingMore(true);
-    try {
-      await onLoadMore(section.id);
-    } finally {
-      setIsLoadingMore(false);
-    }
-  }, [section.hasMore, section.id, isLoadingMore, onLoadMore]);
 
   const handleRetry = useCallback(() => {
     if (onLoadMore) {
@@ -92,8 +81,6 @@ export const ContentShelf: React.FC<ContentShelfProps> = ({
           section={section}
           onContentPress={onContentPress}
           onContinuePress={onContinuePress}
-          onLoadMore={handleLoadMore}
-          isLoadingMore={isLoadingMore}
           isDark={isDark}
         />
       )}
@@ -106,38 +93,20 @@ const ContentList: React.FC<{
   section: LibrarySection;
   onContentPress?: (content: Content) => void;
   onContinuePress?: (content: Content) => void;
-  onLoadMore: () => void;
-  isLoadingMore: boolean;
   isDark: boolean;
 }> = ({
   section,
   onContentPress,
   onContinuePress,
-  onLoadMore,
-  isLoadingMore,
   isDark,
 }) => {
-  const handleScroll = useCallback(
-    (event: any) => {
-      const { contentOffset, contentSize, layoutMeasurement } =
-        event.nativeEvent;
-      const isNearEnd =
-        contentOffset.x + layoutMeasurement.width >= contentSize.width - 100;
 
-      if (isNearEnd && section.hasMore && !isLoadingMore) {
-        onLoadMore();
-      }
-    },
-    [section.hasMore, isLoadingMore, onLoadMore],
-  );
 
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.scrollContent}
-      onScroll={handleScroll}
-      scrollEventThrottle={16}
     >
       {section.items.map((content, index) => (
         <ContentCard
@@ -151,27 +120,7 @@ const ContentList: React.FC<{
         />
       ))}
 
-      {/* Load More Indicator */}
-      {section.hasMore && (
-        <View style={styles.loadMoreContainer}>
-          {isLoadingMore ? (
-            <ActivityIndicator size="small" color="#5B9BFF" />
-          ) : (
-            <Pressable
-              style={[
-                styles.loadMoreButton,
-                isDark && styles.loadMoreButtonDark,
-              ]}
-              onPress={onLoadMore}
-              accessibilityRole="button"
-              accessibilityLabel="Load more content"
-            >
-              <Ionicons name="add" size={24} color="#5B9BFF" />
-              <Text style={styles.loadMoreText}>More</Text>
-            </Pressable>
-          )}
-        </View>
-      )}
+
     </ScrollView>
   );
 };
@@ -295,32 +244,7 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
 
-  loadMoreContainer: {
-    width: 120,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  loadMoreButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#F0F8FF',
-    borderWidth: 2,
-    borderColor: '#5B9BFF',
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadMoreButtonDark: {
-    backgroundColor: '#1A2332',
-  },
-  loadMoreText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#5B9BFF',
-    marginTop: 4,
-  },
+
 
   // Skeleton styles
   skeletonCard: {

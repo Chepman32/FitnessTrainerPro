@@ -35,7 +35,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
   const { state: progressState } = useUserProgress();
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  const { sections, isLoading, error, searchQuery } = libraryState;
+  const { sections, isLoading } = libraryState;
 
   // Initial load
   useEffect(() => {
@@ -48,7 +48,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
     };
 
     loadInitialData();
-  }, []);
+  }, [libraryActions]);
 
   // Handle pull to refresh
   const handleRefresh = useCallback(async () => {
@@ -96,8 +96,9 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
 
         // Convert progress items to content items (simplified for now)
         const continueContent: Content[] = continueItems.map(
-          progress =>
-            ({
+          progress => {
+            // Create a basic content item with required fields based on type
+            const baseContent = {
               id: progress.entityId,
               type: progress.entityType,
               title: `Continue ${progress.entityType}`,
@@ -105,8 +106,69 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
               tags: [],
               createdAt: progress.lastAccessedAt,
               updatedAt: progress.lastAccessedAt,
-              // Add type-specific properties as needed
-            } as Content),
+            };
+
+            // Add type-specific properties
+            switch (progress.entityType) {
+              case 'workout':
+                return {
+                  ...baseContent,
+                  type: 'workout' as const,
+                  durationMinutes: 15,
+                  level: 'Intermediate' as const,
+                  equipment: ['none'],
+                  locations: ['home'],
+                  goals: ['cardio'],
+                  exercises: [],
+                  estimatedCalories: 100,
+                };
+              case 'program':
+                return {
+                  ...baseContent,
+                  type: 'program' as const,
+                  weeks: 4,
+                  sessionsPerWeek: 3,
+                  level: 'Intermediate' as const,
+                  equipment: ['none'],
+                  locations: ['home'],
+                  goals: ['strength'],
+                  totalWorkouts: 12,
+                  estimatedCalories: 200,
+                };
+              case 'article':
+                return {
+                  ...baseContent,
+                  type: 'article' as const,
+                  readTimeMinutes: 5,
+                  topic: 'Fitness',
+                  publishedAt: progress.lastAccessedAt,
+                  excerpt: 'Continue reading this article...',
+                  author: 'Author',
+                };
+              case 'challenge':
+                return {
+                  ...baseContent,
+                  type: 'challenge' as const,
+                  durationDays: 7,
+                  metricType: 'reps' as const,
+                  participantsCount: 100,
+                  friendsCount: 0,
+                  joined: true,
+                };
+              default:
+                return {
+                  ...baseContent,
+                  type: 'workout' as const,
+                  durationMinutes: 15,
+                  level: 'Intermediate' as const,
+                  equipment: ['none'],
+                  locations: ['home'],
+                  goals: ['cardio'],
+                  exercises: [],
+                  estimatedCalories: 100,
+                };
+            }
+          }
         );
 
         return {
@@ -236,23 +298,23 @@ const LibraryErrorFallback: React.FC<{
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: isDark ? '#000' : '#FFF' }]}
+      style={[styles.container, { backgroundColor: isDark ? '#000000' : '#FFFFFF' }]}
     >
       <View style={styles.errorContainer}>
         <View style={styles.errorContent}>
           <Text
-            style={[styles.errorTitle, { color: isDark ? '#FFF' : '#000' }]}
+            style={[styles.errorTitle, { color: isDark ? '#FFFFFF' : '#000000' }]}
           >
             Something went wrong
           </Text>
           <Text
-            style={[styles.errorMessage, { color: isDark ? '#AAA' : '#666' }]}
+            style={[styles.errorMessage, { color: isDark ? '#AAAAAA' : '#666666' }]}
           >
             We're having trouble loading the library. Please try again.
           </Text>
           {__DEV__ && error && (
             <Text
-              style={[styles.errorDetails, { color: isDark ? '#666' : '#999' }]}
+              style={[styles.errorDetails, { color: isDark ? '#666666' : '#999999' }]}
             >
               {error.message}
             </Text>
