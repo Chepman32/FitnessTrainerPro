@@ -23,8 +23,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StyleSheet } from 'react-native';
-// Temporarily removing Ionicons import due to icon display issues
-// import Ionicons from 'react-native-vector-icons/Ionicons';
+// Use Ionicons for vector icons in the tab bar
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 type RootStackParamList = {
   home: undefined;
@@ -40,29 +40,6 @@ type RootStackParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
-
-// Temporary emoji icon component until vector icons are properly configured
-function TabIcon({ name, focused }: { name: string; focused: boolean }) {
-  const getIcon = () => {
-    switch (name) {
-      case 'home': return '🏠';
-      case 'library': return '📚';
-      case 'favorites': return '❤️';
-      case 'programs': return '🎯';
-      case 'history': return '🕐';
-      default: return '📱';
-    }
-  };
-
-  return (
-    <Text style={[
-      styles.tabIcon,
-      focused ? styles.tabIconFocused : styles.tabIconUnfocused
-    ]}>
-      {getIcon()}
-    </Text>
-  );
-}
 
 function PlaceholderScreen({ title }: { title: string }) {
   return (
@@ -97,8 +74,8 @@ function HomeTabs() {
         name="HomeTab"
         options={{
           title: 'Home',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon name="home" focused={focused} />
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons name={focused ? 'home' : 'home-outline'} size={size ?? 24} color={color as string} />
           ),
         }}
       >
@@ -115,8 +92,8 @@ function HomeTabs() {
       <Tab.Screen
         name="Library"
         options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon name="library" focused={focused} />
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons name={focused ? 'book' : 'book-outline'} size={size ?? 24} color={color as string} />
           ),
         }}
       >
@@ -125,8 +102,8 @@ function HomeTabs() {
       <Tab.Screen
         name="Favorites"
         options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon name="favorites" focused={focused} />
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons name={focused ? 'heart' : 'heart-outline'} size={size ?? 24} color={color as string} />
           ),
         }}
       >
@@ -141,8 +118,8 @@ function HomeTabs() {
       <Tab.Screen
         name="Programs"
         options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon name="programs" focused={focused} />
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={size ?? 24} color={color as string} />
           ),
         }}
       >
@@ -248,7 +225,7 @@ function AppStack() {
               navigation.replace('complexTraining', { 
                 program: route.params.completionData.program,
                 soundsEnabled: true,
-                vibrationsEnabled: true
+                vibrationsEnabled: true,
               });
             }}
           />
@@ -259,27 +236,26 @@ function AppStack() {
 }
 
 function App() {
-  const isDarkMode = useColorScheme() === 'dark';
-
+  const colorScheme = useColorScheme();
   return (
-    <SafeAreaProvider>
-      <GestureHandlerRootView style={styles.flex1}>
-        <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+    <GestureHandlerRootView style={styles.flex1}>
+      <SafeAreaProvider>
         <PreferencesProvider>
-          <SessionProvider>
-            <LibraryProvider>
-              <UserProgressProvider>
-                <FavoritesProvider>
+          <LibraryProvider>
+            <UserProgressProvider>
+              <FavoritesProvider>
+                <SessionProvider>
                   <NavigationContainer>
+                    <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
                     <AppStack />
                   </NavigationContainer>
-                </FavoritesProvider>
-              </UserProgressProvider>
-            </LibraryProvider>
-          </SessionProvider>
+                </SessionProvider>
+              </FavoritesProvider>
+            </UserProgressProvider>
+          </LibraryProvider>
         </PreferencesProvider>
-      </GestureHandlerRootView>
-    </SafeAreaProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 
