@@ -1,8 +1,9 @@
 import React from 'react';
-import { createStackNavigator } from '@react-navigation/stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useColorScheme, Text, View } from 'react-native';
 import { Content, LibrarySection } from '../types/library';
 import { LibraryScreen } from '../screens/LibraryScreen';
+import { SeeAllScreen } from '../screens/SeeAllScreen';
 
 // Navigation parameter types
 export type LibraryStackParamList = {
@@ -38,7 +39,7 @@ export type LibraryStackParamList = {
   };
 };
 
-const Stack = createStackNavigator<LibraryStackParamList>();
+const Stack = createNativeStackNavigator<LibraryStackParamList>();
 
 export const LibraryNavigator: React.FC = () => {
   const isDark = useColorScheme() === 'dark';
@@ -84,10 +85,11 @@ export const LibraryNavigator: React.FC = () => {
 
       <Stack.Screen
         name="SeeAllSection"
-        component={SeeAllSectionScreen}
+        component={SeeAllScreen}
         options={({ route }) => ({
           title: route.params.section.title,
           headerBackTitleVisible: false,
+          headerShown: false, // Using custom header in component
         })}
       />
 
@@ -203,14 +205,7 @@ const SearchResultsScreen: React.FC<{ route: any; navigation: any }> = ({
   return <View><Text>Search Results</Text></View>;
 };
 
-const SeeAllSectionScreen: React.FC<{ route: any; navigation: any }> = ({
-  route,
-  navigation: _navigation,
-}) => {
-  const { section } = route.params;
-  console.log('Section:', section.title);
-  return <View><Text>See All Section</Text></View>;
-};
+// SeeAllSectionScreen is now implemented as SeeAllScreen component
 
 const ContentDetailScreen: React.FC<{ route: any; navigation: any }> = ({
   route,

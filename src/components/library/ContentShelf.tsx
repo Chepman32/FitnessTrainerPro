@@ -397,3 +397,65 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+
+// ContentShelfSkeleton component for loading states
+type ContentShelfSkeletonProps = {
+  title: string;
+};
+
+export const ContentShelfSkeleton: React.FC<ContentShelfSkeletonProps> = ({ title }) => {
+  const isDark = useColorScheme() === 'dark';
+  
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#000000' }]}>
+          {title}
+        </Text>
+      </View>
+      
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Skeleton content cards */}
+        {[1, 2, 3].map((index) => (
+          <View key={index} style={skeletonStyles.skeletonCard}>
+            <View style={[skeletonStyles.skeletonImage, { backgroundColor: isDark ? '#333' : '#E5E5E5' }]} />
+            <View style={skeletonStyles.skeletonContent}>
+              <View style={[skeletonStyles.skeletonTitle, { backgroundColor: isDark ? '#444' : '#D0D0D0' }]} />
+              <View style={[skeletonStyles.skeletonSubtitle, { backgroundColor: isDark ? '#555' : '#E0E0E0' }]} />
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+    </View>
+  );
+};
+
+const skeletonStyles = StyleSheet.create({
+  skeletonCard: {
+    width: 280,
+    marginRight: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  skeletonImage: {
+    width: '100%',
+    height: 160,
+  },
+  skeletonContent: {
+    padding: 16,
+  },
+  skeletonTitle: {
+    height: 20,
+    borderRadius: 4,
+    marginBottom: 8,
+  },
+  skeletonSubtitle: {
+    height: 16,
+    borderRadius: 4,
+    width: '70%',
+  },
+});

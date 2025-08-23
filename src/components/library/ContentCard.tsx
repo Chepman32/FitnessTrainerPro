@@ -18,6 +18,7 @@ import {
 } from '../../types/library';
 import { useUserProgress } from '../../state/UserProgressContext';
 import { formatProgressText } from '../../state/UserProgressContext';
+import { premiumService } from '../../services/premiumService';
 import {
   AccessibilityUtils,
   useAccessibility,
@@ -40,7 +41,7 @@ export const ContentCard: React.FC<ContentCardProps> = ({
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
   const { actions: progressActions } = useUserProgress();
-  const { isReduceMotionEnabled } = useAccessibility();
+  const { isScreenReaderEnabled, isReduceMotionEnabled } = useAccessibility();
 
   const progress = progressActions.getProgress(content.id);
   const hasProgress =
@@ -92,7 +93,7 @@ export const ContentCard: React.FC<ContentCardProps> = ({
         pressed && !isReduceMotionEnabled && styles.cardPressed,
       ]}
       onPress={handlePress}
-      accessibilityRole="button"
+      accessibilityRole={AccessibilityUtils.getContentRole(content)}
       accessibilityLabel={AccessibilityUtils.getContentCardLabel(content)}
       accessibilityHint={AccessibilityUtils.getContentCardHint(content)}
       accessibilityState={AccessibilityUtils.getAccessibilityState(

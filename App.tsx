@@ -12,7 +12,7 @@ import HomeScreen from './src/screens/HomeScreen';
 import SetupScreen from './src/screens/SetupScreen';
 import { OriginalTrainingScreen } from './src/screens/OriginalTrainingScreen';
 import DoneScreen from './src/screens/DoneScreen';
-import { LibraryScreen } from './src/screens/LibraryScreen';
+import { LibraryNavigator } from './src/navigation/LibraryNavigator';
 import { ArticleDetailScreen } from './src/screens/ArticleDetailScreen';
 import { FavoritesScreen } from './src/screens/FavoritesScreen';
 import { ProgramStartScreen } from './src/screens/ProgramStartScreen';
@@ -120,48 +120,7 @@ function HomeTabs() {
           ),
         }}
       >
-        {({ navigation }) => (
-          <LibraryScreen 
-            onContentPress={(content) => {
-              console.log('Content pressed:', content.title, content.type);
-              if (content.type === 'program') {
-                console.log('Program details:', {
-                  hasComplexProgram: !!(content as any).complexProgram,
-                  weeks: (content as any).weeks,
-                  tags: (content as any).tags
-                });
-              }
-              if (content.type === 'article') {
-                navigation.navigate('articleDetail', { article: content });
-              } else if (content.type === 'program' && (content as any).complexProgram) {
-                // Handle Complex Training Programs (timed workouts)
-                console.log('Starting Complex Training Program:', content.title);
-                navigation.navigate('programStart', { program: (content as any).complexProgram });
-              } else if (content.type === 'program') {
-                // Handle traditional programs (multi-week programs)
-                const program = content as any;
-                console.log('Traditional program tapped:', content.title);
-                console.log('This is a', program.weeks, 'week program with', program.totalWorkouts, 'workouts');
-                
-                Alert.alert(
-                  'Traditional Program',
-                  `"${content.title}" is a ${program.weeks}-week program with ${program.totalWorkouts} total workouts.\n\nFor immediate timed workouts with step-by-step guidance, check out the Programs tab (🎯).`,
-                  [
-                    { text: 'Go to Programs Tab', onPress: () => navigation.navigate('Programs') },
-                    { text: 'OK' }
-                  ]
-                );
-              } else {
-                // Handle other content types (workouts, challenges)
-                console.log('Other content type tapped - detail screen not implemented yet');
-              }
-            }}
-            onSeeAllPress={(section) => {
-              console.log('See all pressed for section:', section.title);
-              // Later you can add navigation.navigate('SectionDetail', { section })
-            }}
-          />
-        )}
+        {() => <LibraryNavigator />}
       </Tab.Screen>
       <Tab.Screen
         name="Favorites"
