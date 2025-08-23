@@ -1,5 +1,5 @@
 import React from 'react';
-import { StatusBar, useColorScheme, View, Text, Alert } from 'react-native';
+import { StatusBar, useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PreferencesProvider } from './src/state/PreferencesContext';
@@ -25,6 +25,9 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StyleSheet } from 'react-native';
 // Use Ionicons for vector icons in the tab bar
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import SplashScreen from './src/screens/SplashScreen';
+import OnboardingScreen from './src/screens/OnboardingScreen';
+import { OnboardingProvider, useOnboarding } from './src/state/OnboardingContext';
 
 type RootStackParamList = {
   home: undefined;
@@ -40,23 +43,6 @@ type RootStackParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
-
-function PlaceholderScreen({ title }: { title: string }) {
-  return (
-    <SafeAreaProvider>
-      <View
-        style={{
-          flex: 1,
-          justifyContent: 'center',
-          alignItems: 'center',
-          backgroundColor: '#060A18',
-        }}
-      >
-        <Text style={{ color: 'white', fontSize: 24 }}>{title}</Text>
-      </View>
-    </SafeAreaProvider>
-  );
-}
 
 function HomeTabs() {
   const { setSetup } = useSession();
@@ -235,6 +221,12 @@ function AppStack() {
   );
 }
 
+function RootNavigator() {
+  const { loading, hasOnboarded } = useOnboarding();
+  if (loading) return <SplashScreen />;
+  return hasOnboarded ? <AppStack /> : <OnboardingScreen />;
+}
+
 function App() {
   const colorScheme = useColorScheme();
   return (
@@ -245,10 +237,12 @@ function App() {
             <UserProgressProvider>
               <FavoritesProvider>
                 <SessionProvider>
-                  <NavigationContainer>
-                    <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
-                    <AppStack />
-                  </NavigationContainer>
+                  <OnboardingProvider>
+                    <NavigationContainer>
+                      <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
+                      <RootNavigator />
+                    </NavigationContainer>
+                  </OnboardingProvider>
                 </SessionProvider>
               </FavoritesProvider>
             </UserProgressProvider>
