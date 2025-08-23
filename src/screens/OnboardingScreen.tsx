@@ -1,548 +1,1015 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, useWindowDimensions, Image } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Pressable, TextInput, Switch, ScrollView, Alert, PermissionsAndroid, Platform } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { Equipment, Location, Level, Goal } from '../types/library';
 import { useOnboarding } from '../state/OnboardingContext';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, {
-  Easing,
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
-import ProgressRing from '../components/ProgressRing';
 
+const OnboardingScreen = () => {
+  const { setHasOnboarded } = useOnboarding();
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [formData, setFormData] = useState({
+    goals: [] as string[],
+    age: 25,
+    sex: 'Male',
+    height: 170,
+    weight: 70,
+    waist: '',
+    hips: '',
+    neck: '',
+    experience: 'Beginner',
+    workoutDuration: 30,
+    trainingTypes: [] as string[],
+    workoutDays: [] as string[],
+    reminderTime: 'Morning',
+    customHour: 9,
+    customMinute: 0,
+    customPeriod: 'AM',
+    showCustomTimePicker: false,
+    notifications: true,
+    motivation: [] as string[],
+    agreedToTerms: false,
+    subscribeToNewsletter: false
+  });
 
+  const TOTAL_SLIDES = 9;
 
-const EQUIPMENT_LABEL: Record<Equipment, string> = {
-  none: 'No equipment',
-  dumbbells: 'Dumbbells',
-  bands: 'Bands',
-  kettlebell: 'Kettlebell',
-  barbell: 'Barbell',
-  machines: 'Machines',
-};
+  const isSlideValid = () => {
+    switch (currentSlide) {
+      case 0: // Goals
+        return formData.goals.length > 0;
+      case 1: // Profile - always valid (has default values)
+        return true;
+      case 2: // Body measurements - optional fields, always valid
+        return true;
+      case 3: // Experience
+        return formData.experience !== '';
+      case 4: // Training types
+        return formData.trainingTypes.length > 0;
+      case 5: // Workout frequency
+        return formData.workoutDays.length > 0;
+      case 6: // Reminder time
+        return formData.reminderTime !== '';
+      case 7: // Motivation
+        return formData.motivation.length > 0;
+      case 8: // Terms and consent
+        return formData.agreedToTerms;
+      default:
+        return true;
+    }
+  };
 
-const LOCATION_LABEL: Record<Location, string> = {
-  home: 'Home',
-  gym: 'Gym',
-  outdoor: 'Outdoor',
-  office: 'Office',
-};
-
-const LEVELS: Level[] = ['Beginner', 'Intermediate', 'Advanced'];
-
-const TOTAL_STEPS = 9;
-
-const Pill: React.FC<{ selected?: boolean; onPress?: () => void; icon?: string } & React.PropsWithChildren> = ({ selected, onPress, icon, children }) => (
-  <Pressable onPress={onPress} style={[styles.pill, selected && styles.pillSelected]}> 
-    {!!icon && <Ionicons name={icon as any} size={18} color={selected ? '#0A1224' : '#83C5FF'} style={{ marginRight: 8 }} />} 
-    <Text style={[styles.pillText, selected && styles.pillTextSelected]}>{children}</Text>
-  </Pressable>
-);
-
-const SectionTitle: React.FC<React.PropsWithChildren> = ({ children }) => (
-  <Text style={styles.sectionTitle}>{children}</Text>
-);
-
-const FeatureCard: React.FC<{ icon?: string; title: string; subtitle: string; imageUrl?: string; onPress?: () => void; selected?: boolean }> = ({ icon, title, subtitle, imageUrl, onPress, selected }) => (
-  <Pressable onPress={onPress} style={[styles.card, selected && { borderColor: '#83C5FF', borderWidth: 2 }]}> 
-    {imageUrl ? (
-      <Image source={{ uri: imageUrl }} style={styles.cardImage} />
-    ) : (
-      <View style={styles.cardIconWrap}><Ionicons name={(icon || 'sparkles') as any} size={28} color="#0A1224" /></View>
-    )}
-    <Text style={styles.cardTitle}>{title}</Text>
-    <Text style={styles.cardSubtitle}>{subtitle}</Text>
-  </Pressable>
-);
-
-const NextButton: React.FC<{ onPress: () => void; label?: string; disabled?: boolean }>=({ onPress, label = 'Next', disabled }) => (
-  <Pressable onPress={onPress} style={[styles.nextBtn, disabled && { opacity: 0.6 }]} disabled={disabled}>
-    <Text style={styles.nextBtnText}>{label}</Text>
-    <Ionicons name="arrow-forward" size={20} color="#0A1224" />
-  </Pressable>
-);
-
-const BackButton: React.FC<{ onPress: () => void }>=({ onPress }) => (
-  <Pressable onPress={onPress} style={styles.backBtn}>
-    <Ionicons name="arrow-back" size={20} color="#83C5FF" />
-    <Text style={styles.backBtnText}>Back</Text>
-  </Pressable>
-);
-
-const BottomProgress: React.FC<{ step: number }>=({ step }) => {
-  const progress = useSharedValue((step + 1) / TOTAL_STEPS);
-  useEffect(() => {
-    progress.value = withTiming((step + 1) / TOTAL_STEPS, { duration: 300, easing: Easing.out(Easing.cubic) });
-  }, [step, progress]);
-  const animatedStyle = useAnimatedStyle(() => ({ width: `${progress.value * 100}%` }));
-  return (
-    <View style={styles.bottomProgressWrap}>
-      <View style={styles.bottomProgressBarBg}>
-        <Animated.View style={[styles.bottomProgressBarFill, animatedStyle]} />
-      </View>
-      <Text style={styles.bottomProgressText}>{step + 1} / {TOTAL_STEPS}</Text>
-    </View>
-  );
-};
-
-const SlideWrapper: React.FC<{ title: string; subtitle?: string; index: number; onSkip?: () => void } & React.PropsWithChildren> = ({ title, subtitle, index, onSkip, children }) => {
-  return (
-    <View style={[styles.slide]}>      
-      <View style={styles.headerRow}>
-        <View />
-        <Pressable onPress={onSkip}><Text style={styles.skip}>Skip</Text></Pressable>
-      </View>
-      <Text style={styles.title}>{title}</Text>
-      {!!subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
-      <View style={{ flex: 1 }}>{children}</View>
-      <BottomProgress step={index} />
-    </View>
-  );
-};
-
-// Remove unused GOAL_LABEL to satisfy linter
-
-// Simple horizontal slider using Gesture API
-const AgeSlider: React.FC<{ min: number; max: number; value: number; onChange: (v:number)=>void }>=({ min, max, value, onChange }) => {
-  const trackWidth = 280;
-  const x = useSharedValue(((value - min) / (max - min)) * trackWidth);
-  const startX = useSharedValue(0);
-  useEffect(() => {
-    x.value = withTiming(((value - min) / (max - min)) * trackWidth, { duration: 200 });
-  }, [min, max, value, x]);
-  const pan = useMemo(() => Gesture.Pan()
-    .onStart(() => { startX.value = x.value; })
-    .onUpdate((evt: any) => {
-      const next = Math.min(trackWidth, Math.max(0, startX.value + evt.translationX));
-      x.value = next;
-    })
-    .onEnd(() => {
-      const v = Math.round(min + (x.value/trackWidth) * (max - min));
-      runOnJS(onChange)(v);
-    })
-  , [min, max, onChange, startX, x]);
-  const knobStyle = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }));
-  const fillStyle = useAnimatedStyle(() => ({ width: x.value }));
-  return (
-    <GestureDetector gesture={pan}>
-      <Animated.View style={styles.sliderTrack}>
-        <Animated.View style={[styles.sliderFill, fillStyle]} />
-        <Animated.View style={[styles.sliderKnob, knobStyle]} />
-        <Text style={styles.sliderLabel}>{value} yrs</Text>
-      </Animated.View>
-    </GestureDetector>
-  );
-};
-
-// Vertical slider for Height/Weight using Gesture API
-const VerticalSlider: React.FC<{ min: number; max: number; value: number; onChange: (v:number)=>void; label: string; unit: string }>=({ min, max, value, onChange, label, unit }) => {
-  const height = 180;
-  const y = useSharedValue(height - ((value - min) / (max - min)) * height);
-  const startY = useSharedValue(0);
-  useEffect(() => {
-    y.value = withTiming(height - ((value - min) / (max - min)) * height, { duration: 200 });
-  }, [min, max, value, y]);
-  const pan = useMemo(() => Gesture.Pan()
-    .onStart(() => { startY.value = y.value; })
-    .onUpdate((evt: any) => {
-      const next = Math.min(height, Math.max(0, startY.value + evt.translationY));
-      y.value = next;
-    })
-    .onEnd(() => {
-      const v = Math.round(min + ((height - y.value)/height) * (max - min));
-      runOnJS(onChange)(v);
-    })
-  , [min, max, onChange, startY, y]);
-  const knobStyle = useAnimatedStyle(() => ({ transform: [{ translateY: y.value - 12 }] }));
-  const fillStyle = useAnimatedStyle(() => ({ height: height - y.value }));
-  const currentValue = Math.round(min + ((height - (y as any).value)/height) * (max - min));
-  return (
-    <View style={styles.vSliderWrap}>
-      <Text style={styles.vSliderTitle}>{label}</Text>
-      <GestureDetector gesture={pan}>
-        <Animated.View style={[styles.vSliderTrack]}> 
-          <Animated.View style={[styles.vSliderFill, fillStyle]} />
-          <Animated.View style={[styles.vSliderKnob, knobStyle]} />
-        </Animated.View>
-      </GestureDetector>
-      <Text style={styles.vSliderValue}>{currentValue} {unit}</Text>
-    </View>
-  );
-};
-
-const OnboardingScreen: React.FC = () => {
-  const { profile, updateProfile, setHasOnboarded } = useOnboarding();
-  const [index, _setIndex] = useState(0);
-  const setIndex = (i:number) => _setIndex(Math.max(0, Math.min(TOTAL_STEPS - 1, i)));
-  const { width } = useWindowDimensions();
-
-  // Gesture + transition
-  const translateX = useSharedValue(0);
-  const entryDirRef = useRef<0 | -1 | 1>(0);
-  const currentIndexSV = useSharedValue(index);
-  useEffect(() => { currentIndexSV.value = index; }, [index, currentIndexSV]);
-
-  const setIndexAfterAnim = useCallback((toIndex: number, enterDir: -1 | 1) => {
-    entryDirRef.current = enterDir;
-    setIndex(toIndex);
-  }, []);
-  
-  const setIndexAfterSwipe = useCallback((toIndex: number, enterDir: -1 | 1) => {
-    entryDirRef.current = enterDir;
-    setIndex(toIndex);
-  }, []);
-
-  const animateOutAndIn = (dir: -1 | 1, toIndex: number) => {
-    translateX.value = withTiming(dir * -width, { duration: 300, easing: Easing.out(Easing.cubic) }, (finished) => {
-      if (finished) {
-        runOnJS(setIndexAfterAnim)(toIndex, (dir * -1) as -1 | 1);
+  const requestNotificationPermission = async () => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+          {
+            title: 'Notification Permission',
+            message: 'This app needs access to send you workout reminders.',
+            buttonNeutral: 'Ask Me Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          },
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      } catch (err) {
+        console.warn(err);
+        return false;
       }
-    });
-  };
-
-  useEffect(() => {
-    if (entryDirRef.current !== 0) {
-      const from = entryDirRef.current * width;
-      translateX.value = from;
-      translateX.value = withTiming(0, { duration: 320, easing: Easing.out(Easing.cubic) }, () => {
-        entryDirRef.current = 0 as 0;
-      });
-    }
-  }, [index, translateX, width]);
-
-  const onSkip = () => {
-    animateOutAndIn(-1, TOTAL_STEPS - 1);
-  };
-
-  const goNext = () => {
-    if (index < TOTAL_STEPS - 1) {
-      animateOutAndIn(-1, index + 1);
-    }
-  };
-  const goBack = () => {
-    if (index > 0) {
-      animateOutAndIn(1, index - 1);
+    } else {
+      // For iOS, you would typically use @react-native-async-storage/async-storage
+      // or react-native-permissions library for more robust permission handling
+      Alert.alert(
+        'Notifications',
+        'Please enable notifications in your device settings to receive workout reminders.',
+        [{ text: 'OK' }]
+      );
+      return true;
     }
   };
 
-  const panSlides = useMemo(() => Gesture.Pan()
-    .onUpdate((evt: any) => {
-      translateX.value = evt.translationX * 0.9;
-    })
-    .onEnd((evt: any) => {
-      const threshold = width * 0.25;
-      if (evt.translationX < -threshold && currentIndexSV.value < TOTAL_STEPS - 1) {
-        translateX.value = withTiming(-width, { duration: 250 }, () => {
-          runOnJS(setIndexAfterSwipe)(currentIndexSV.value + 1, (-1) as -1);
-        });
-      } else if (evt.translationX > threshold && currentIndexSV.value > 0) {
-        translateX.value = withTiming(width, { duration: 250 }, () => {
-          runOnJS(setIndexAfterSwipe)(currentIndexSV.value - 1, (1) as 1);
-        });
-      } else {
-        translateX.value = withSpring(0, { damping: 14, stiffness: 140 });
+  const nextSlide = async () => {
+    if (!isSlideValid()) return;
+    
+    // If on reminder slide and notifications are enabled, request permission
+    if (currentSlide === 6 && formData.notifications) {
+      const hasPermission = await requestNotificationPermission();
+      if (!hasPermission) {
+        Alert.alert(
+          'Permission Required',
+          'Notification permission is required to send you workout reminders. You can enable it later in settings.',
+          [{ text: 'OK' }]
+        );
       }
-    })
-  , [currentIndexSV, translateX, width, setIndexAfterSwipe]);
-
-  const animatedSlideStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }],
-  }));
-
-  // Final slide progress animation
-  const [planReady, setPlanReady] = useState(false);
-  const finalProgress = useSharedValue(0);
-  const orbit = useSharedValue(0);
-  useEffect(() => {
-    if (index === TOTAL_STEPS - 1) {
-      setPlanReady(false);
-      finalProgress.value = 0;
-      finalProgress.value = withTiming(1, { duration: 3600, easing: Easing.inOut(Easing.cubic) }, (f) => {
-        if (f) runOnJS(setPlanReady)(true);
-      });
-      orbit.value = 0;
-      orbit.value = withRepeat(withTiming(2 * Math.PI, { duration: 4000, easing: Easing.linear }), -1, false);
     }
-  }, [index, finalProgress, orbit]);
+    
+    if (currentSlide < TOTAL_SLIDES - 1) {
+      setCurrentSlide(currentSlide + 1);
+    } else {
+      setHasOnboarded(true);
+    }
+  };
 
-  const canFinish = useMemo(() => (profile.goals?.length ?? 0) > 0, [profile.goals]);
+  const prevSlide = () => {
+    if (currentSlide > 0) {
+      setCurrentSlide(currentSlide - 1);
+    }
+  };
 
-  // Animated orbiting icons for final slide
-  const OrbitIcon: React.FC<{ radius: number; angleOffset: number; icon: string; color: string }> = ({ radius, angleOffset, icon, color }) => {
-    const s = useAnimatedStyle(() => {
-      const angle = orbit.value + angleOffset;
-      const x = Math.cos(angle) * radius;
-      const y = Math.sin(angle) * radius;
-      return { transform: [{ translateX: x }, { translateY: y }] };
-    });
-    return (
-      <Animated.View style={[styles.orbitIcon, s]}> 
-        <Ionicons name={icon as any} size={18} color={color} />
-      </Animated.View>
-    );
+  const toggleArrayItem = (array: string[], item: string) => {
+    return array.includes(item)
+      ? array.filter(i => i !== item)
+      : [...array, item];
+  };
+
+  const PillButton = ({ title, selected, onPress }: { title: string; selected: boolean; onPress: () => void }) => (
+    <Pressable
+      style={[styles.pillButton, selected && styles.pillButtonSelected]}
+      onPress={onPress}
+    >
+      <Text style={[styles.pillButtonText, selected && styles.pillButtonTextSelected]}>
+        {title}
+      </Text>
+    </Pressable>
+  );
+
+  const DayButton = ({ day, selected, onPress }: { day: string; selected: boolean; onPress: () => void }) => (
+    <Pressable
+      style={[styles.dayButton, selected && styles.dayButtonSelected]}
+      onPress={onPress}
+    >
+      <Text style={[styles.dayButtonText, selected && styles.dayButtonTextSelected]}>
+        {day}
+      </Text>
+    </Pressable>
+  );
+
+  const renderSlide = () => {
+    switch (currentSlide) {
+      case 0:
+        return (
+          <View style={styles.slideContainer}>
+            <Text style={styles.title}>Set Your Goals</Text>
+            <Text style={styles.subtitle}>What do you want to achieve?</Text>
+            <View style={styles.pillContainer}>
+              {['Lose Weight', 'Build Muscle', 'Get Fitter', 'Improve Endurance', 'Something Else'].map((goal) => (
+                <PillButton
+                  key={goal}
+                  title={goal}
+                  selected={formData.goals.includes(goal)}
+                  onPress={() => setFormData(prev => ({
+                    ...prev,
+                    goals: toggleArrayItem(prev.goals, goal)
+                  }))}
+                />
+              ))}
+            </View>
+          </View>
+        );
+
+      case 1:
+        return (
+          <View style={styles.slideContainer}>
+            <Text style={styles.title}>Profile</Text>
+            <Text style={styles.subtitle}>Tell us about yourself</Text>
+            
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Age</Text>
+              <View style={styles.stepperContainer}>
+                <Pressable
+                  style={styles.stepperButton}
+                  onPress={() => setFormData(prev => ({ ...prev, age: Math.max(16, prev.age - 1) }))}
+                >
+                  <Ionicons name="remove" size={20} color="#666" />
+                </Pressable>
+                <Text style={styles.stepperValue}>{formData.age}</Text>
+                <Pressable
+                  style={styles.stepperButton}
+                  onPress={() => setFormData(prev => ({ ...prev, age: Math.min(100, prev.age + 1) }))}
+                >
+                  <Ionicons name="add" size={20} color="#666" />
+                </Pressable>
+              </View>
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Sex</Text>
+              <View style={styles.toggleContainer}>
+                <Pressable
+                  style={[styles.toggleButton, formData.sex === 'Male' && styles.toggleButtonSelected]}
+                  onPress={() => setFormData(prev => ({ ...prev, sex: 'Male' }))}
+                >
+                  <Text style={[styles.toggleButtonText, formData.sex === 'Male' && styles.toggleButtonTextSelected]}>Male</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.toggleButton, formData.sex === 'Female' && styles.toggleButtonSelected]}
+                  onPress={() => setFormData(prev => ({ ...prev, sex: 'Female' }))}
+                >
+                  <Text style={[styles.toggleButtonText, formData.sex === 'Female' && styles.toggleButtonTextSelected]}>Female</Text>
+                </Pressable>
+              </View>
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Height (cm)</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.height.toString()}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, height: parseInt(text) || 0 }))}
+                keyboardType="numeric"
+                placeholder="170"
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Weight (kg)</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.weight.toString()}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, weight: parseInt(text) || 0 }))}
+                keyboardType="numeric"
+                placeholder="70"
+              />
+            </View>
+          </View>
+        );
+
+      case 2:
+        return (
+          <View style={styles.slideContainer}>
+            <Text style={styles.title}>Body Measurements</Text>
+            <Text style={styles.subtitle}>Optional measurements for better tracking</Text>
+            
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Waist (cm)</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.waist}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, waist: text }))}
+                keyboardType="numeric"
+                placeholder="Optional"
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Hips (cm)</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.hips}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, hips: text }))}
+                keyboardType="numeric"
+                placeholder="Optional"
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Neck (cm)</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.neck}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, neck: text }))}
+                keyboardType="numeric"
+                placeholder="Optional"
+              />
+            </View>
+          </View>
+        );
+
+      case 3:
+        return (
+          <View style={styles.slideContainer}>
+            <Text style={styles.title}>Experience</Text>
+            <Text style={styles.subtitle}>What's your fitness level?</Text>
+            
+            <View style={styles.toggleContainer}>
+              <Pressable
+                style={[styles.experienceButton, formData.experience === 'Beginner' && styles.experienceButtonSelected]}
+                onPress={() => setFormData(prev => ({ ...prev, experience: 'Beginner' }))}
+              >
+                <Text style={[styles.experienceButtonText, formData.experience === 'Beginner' && styles.experienceButtonTextSelected]}>Beginner</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.experienceButton, formData.experience === 'Intermediate' && styles.experienceButtonSelected]}
+                onPress={() => setFormData(prev => ({ ...prev, experience: 'Intermediate' }))}
+              >
+                <Text style={[styles.experienceButtonText, formData.experience === 'Intermediate' && styles.experienceButtonTextSelected]}>Intermediate</Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Workout Duration: {formData.workoutDuration} minutes</Text>
+              <View style={styles.sliderContainer}>
+                <Pressable
+                  style={styles.sliderButton}
+                  onPress={() => setFormData(prev => ({ ...prev, workoutDuration: Math.max(15, prev.workoutDuration - 15) }))}
+                >
+                  <Text style={styles.sliderButtonText}>-</Text>
+                </Pressable>
+                <View style={styles.sliderTrack}>
+                  <View style={[styles.sliderFill, { width: `${(formData.workoutDuration - 15) / 105 * 100}%` }]} />
+                </View>
+                <Pressable
+                  style={styles.sliderButton}
+                  onPress={() => setFormData(prev => ({ ...prev, workoutDuration: Math.min(120, prev.workoutDuration + 15) }))}
+                >
+                  <Text style={styles.sliderButtonText}>+</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        );
+
+      case 4:
+        return (
+          <View style={styles.slideContainer}>
+            <Text style={styles.title}>What are your preferred training types?</Text>
+            <View style={styles.pillContainer}>
+              {['Strength Training', 'Cardio', 'HIIT', 'Yoga', 'Pilates'].map((type) => (
+                <PillButton
+                  key={type}
+                  title={type}
+                  selected={formData.trainingTypes.includes(type)}
+                  onPress={() => setFormData(prev => ({
+                    ...prev,
+                    trainingTypes: toggleArrayItem(prev.trainingTypes, type)
+                  }))}
+                />
+              ))}
+            </View>
+          </View>
+        );
+
+      case 5:
+        const daysOfWeek = [
+          { id: 'sunday', label: 'S' },
+          { id: 'monday', label: 'M' },
+          { id: 'tuesday', label: 'T' },
+          { id: 'wednesday', label: 'W' },
+          { id: 'thursday', label: 'T' },
+          { id: 'friday', label: 'F' },
+          { id: 'saturday', label: 'S' }
+        ];
+        
+        return (
+          <View style={styles.slideContainer}>
+            <Text style={styles.title}>How often do you want to work out?</Text>
+            <View style={styles.daysContainer}>
+              {daysOfWeek.map((dayObj) => (
+                <DayButton
+                  key={dayObj.id}
+                  day={dayObj.label}
+                  selected={formData.workoutDays.includes(dayObj.id)}
+                  onPress={() => setFormData(prev => ({
+                    ...prev,
+                    workoutDays: toggleArrayItem(prev.workoutDays, dayObj.id)
+                  }))}
+                />
+              ))}
+            </View>
+            
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Session Duration: {formData.workoutDuration} minutes</Text>
+              <View style={styles.sliderContainer}>
+                <Pressable
+                  style={styles.sliderButton}
+                  onPress={() => setFormData(prev => ({ ...prev, workoutDuration: Math.max(15, prev.workoutDuration - 15) }))}
+                >
+                  <Text style={styles.sliderButtonText}>-</Text>
+                </Pressable>
+                <View style={styles.sliderTrack}>
+                  <View style={[styles.sliderFill, { width: `${(formData.workoutDuration - 15) / 105 * 100}%` }]} />
+                </View>
+                <Pressable
+                  style={styles.sliderButton}
+                  onPress={() => setFormData(prev => ({ ...prev, workoutDuration: Math.min(120, prev.workoutDuration + 15) }))}
+                >
+                  <Text style={styles.sliderButtonText}>+</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        );
+
+      case 6:
+        return (
+          <View style={styles.slideContainer}>
+            <Text style={styles.title}>At what time to remind you?</Text>
+            
+            <View style={styles.timeContainer}>
+              <Pressable
+                style={[styles.timeButton, formData.reminderTime === 'Morning' && styles.timeButtonSelected]}
+                onPress={() => setFormData(prev => ({ ...prev, reminderTime: 'Morning', showCustomTimePicker: false }))}
+              >
+                <Text style={[styles.timeButtonText, formData.reminderTime === 'Morning' && styles.timeButtonTextSelected]}>Morning</Text>
+                <Text style={[styles.timeSubtext, formData.reminderTime === 'Morning' && styles.timeButtonTextSelected]}>7:00 AM</Text>
+              </Pressable>
+              
+              <Pressable
+                style={[styles.timeButton, formData.reminderTime === 'Midday' && styles.timeButtonSelected]}
+                onPress={() => setFormData(prev => ({ ...prev, reminderTime: 'Midday', showCustomTimePicker: false }))}
+              >
+                <Text style={[styles.timeButtonText, formData.reminderTime === 'Midday' && styles.timeButtonTextSelected]}>Midday</Text>
+                <Text style={[styles.timeSubtext, formData.reminderTime === 'Midday' && styles.timeButtonTextSelected]}>12:00 PM</Text>
+              </Pressable>
+              
+              <Pressable
+                style={[styles.timeButton, formData.reminderTime === 'Evening' && styles.timeButtonSelected]}
+                onPress={() => setFormData(prev => ({ ...prev, reminderTime: 'Evening', showCustomTimePicker: false }))}
+              >
+                <Text style={[styles.timeButtonText, formData.reminderTime === 'Evening' && styles.timeButtonTextSelected]}>Evening</Text>
+                <Text style={[styles.timeSubtext, formData.reminderTime === 'Evening' && styles.timeButtonTextSelected]}>7:00 PM</Text>
+              </Pressable>
+            </View>
+
+            <Pressable 
+              style={[styles.customTimeButton, formData.showCustomTimePicker && styles.customTimeButtonSelected]}
+              onPress={() => setFormData(prev => ({ ...prev, showCustomTimePicker: !prev.showCustomTimePicker, reminderTime: prev.showCustomTimePicker ? 'Morning' : 'Custom' }))}
+            >
+              <Text style={[styles.customTimeText, formData.showCustomTimePicker && styles.customTimeTextSelected]}>
+                {formData.showCustomTimePicker 
+                  ? 'Hide Custom Time' 
+                  : formData.reminderTime === 'Custom'
+                    ? `${formData.customHour}:${formData.customMinute.toString().padStart(2, '0')} ${formData.customPeriod}`
+                    : 'Custom Time'
+                }
+              </Text>
+            </Pressable>
+
+            {formData.showCustomTimePicker && (
+                    <View style={styles.customTimeInputContainer}>
+                      <View style={styles.iosTimePickerContainer}>
+                        <View style={styles.pickerColumn}>
+                          <ScrollView 
+                            style={styles.pickerScrollView}
+                            showsVerticalScrollIndicator={false}
+                            snapToInterval={40}
+                            decelerationRate="fast"
+                          >
+                            <View style={styles.pickerPadding} />
+                            {[1,2,3,4,5,6,7,8,9,10,11,12].map(hour => (
+                              <Pressable
+                                key={hour}
+                                style={styles.pickerOption}
+                                onPress={() => setFormData(prev => ({...prev, customHour: hour}))}
+                              >
+                                <Text style={[styles.pickerOptionText, formData.customHour === hour && styles.pickerOptionTextSelected]}>{hour}</Text>
+                              </Pressable>
+                            ))}
+                            <View style={styles.pickerPadding} />
+                          </ScrollView>
+                        </View>
+                        
+                        <View style={styles.pickerColumn}>
+                          <ScrollView 
+                            style={styles.pickerScrollView}
+                            showsVerticalScrollIndicator={false}
+                            snapToInterval={40}
+                            decelerationRate="fast"
+                          >
+                            <View style={styles.pickerPadding} />
+                            {[0,5,10,15,20,25,30,35,40,45,50,55].map(minute => (
+                              <Pressable
+                                key={minute}
+                                style={styles.pickerOption}
+                                onPress={() => setFormData(prev => ({...prev, customMinute: minute}))}
+                              >
+                                <Text style={[styles.pickerOptionText, formData.customMinute === minute && styles.pickerOptionTextSelected]}>{minute.toString().padStart(2, '0')}</Text>
+                              </Pressable>
+                            ))}
+                            <View style={styles.pickerPadding} />
+                          </ScrollView>
+                        </View>
+                        
+                        <View style={styles.pickerColumn}>
+                          <ScrollView 
+                            style={styles.pickerScrollView}
+                            showsVerticalScrollIndicator={false}
+                            snapToInterval={40}
+                            decelerationRate="fast"
+                          >
+                            <View style={styles.pickerPadding} />
+                            {['AM', 'PM'].map(period => (
+                              <Pressable
+                                key={period}
+                                style={styles.pickerOption}
+                                onPress={() => setFormData(prev => ({...prev, customPeriod: period}))}
+                              >
+                                <Text style={[styles.pickerOptionText, formData.customPeriod === period && styles.pickerOptionTextSelected]}>{period}</Text>
+                              </Pressable>
+                            ))}
+                            <View style={styles.pickerPadding} />
+                          </ScrollView>
+                        </View>
+                        
+                        <View style={styles.pickerSelectionIndicator} />
+                      </View>
+                    </View>
+                  )}
+
+            <View style={styles.switchContainer}>
+              <Text style={styles.switchLabel}>Enable notifications</Text>
+              <Switch
+                value={formData.notifications}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, notifications: value }))}
+                trackColor={{ false: '#E0E0E0', true: '#4CAF50' }}
+                thumbColor={formData.notifications ? '#FFFFFF' : '#FFFFFF'}
+              />
+            </View>
+          </View>
+        );
+
+      case 7:
+        return (
+          <View style={styles.slideContainer}>
+            <Text style={styles.title}>What drives you to work out?</Text>
+            <View style={styles.pillContainer}>
+              {['Get Fit', 'Gain Muscle', 'Lose Weight', 'Improve Health', 'Increase Energy'].map((motivation) => (
+                <PillButton
+                  key={motivation}
+                  title={motivation}
+                  selected={formData.motivation.includes(motivation)}
+                  onPress={() => setFormData(prev => ({
+                    ...prev,
+                    motivation: toggleArrayItem(prev.motivation, motivation)
+                  }))}
+                />
+              ))}
+            </View>
+          </View>
+        );
+
+      case 8:
+        return (
+          <View style={styles.slideContainer}>
+            <Text style={styles.title}>Review & Consent</Text>
+            
+            <View style={styles.checkboxContainer}>
+              <Pressable
+                style={styles.checkbox}
+                onPress={() => setFormData(prev => ({ ...prev, agreedToTerms: !prev.agreedToTerms }))}
+              >
+                {formData.agreedToTerms && <Ionicons name="checkmark" size={16} color="#4CAF50" />}
+              </Pressable>
+              <Text style={styles.checkboxText}>I agree to the Terms of Service and Privacy Policy</Text>
+            </View>
+
+            <View style={styles.checkboxContainer}>
+              <Pressable
+                style={styles.checkbox}
+                onPress={() => setFormData(prev => ({ ...prev, subscribeToNewsletter: !prev.subscribeToNewsletter }))}
+              >
+                {formData.subscribeToNewsletter && <Ionicons name="checkmark" size={16} color="#4CAF50" />}
+              </Pressable>
+              <Text style={styles.checkboxText}>Subscribe to newsletter for fitness tips</Text>
+            </View>
+          </View>
+        );
+
+      default:
+        return null;
+    }
   };
 
   return (
     <View style={styles.container}>
-      <GestureDetector gesture={panSlides}>
-        <Animated.View style={[{ flex: 1 }, animatedSlideStyle]}>
-          {index === 0 && (
-            <SlideWrapper index={0} onSkip={onSkip} title="Welcome to FitnessTrainerPro" subtitle="Your personal path to a better you starts here.">
-              <View style={{ flex: 1, justifyContent: 'center' }}>
-                <Image
-                  source={{ uri: 'https://images.unsplash.com/photo-1546483875-ad9014c88eba?q=80&w=1200&auto=format&fit=crop' }}
-                  style={styles.heroImage}
-                />
-                <Text style={styles.lead}>Real plans. Real results. No guesswork.</Text>
-              </View>
-              <NextButton onPress={goNext} label="Get started" />
-            </SlideWrapper>
-          )}
+      <View style={styles.header}>
+        <Pressable onPress={prevSlide} disabled={currentSlide === 0}>
+          <Ionicons 
+            name="chevron-back" 
+            size={24} 
+            color={currentSlide === 0 ? '#E0E0E0' : '#333'} 
+          />
+        </Pressable>
+        
+        <View style={styles.progressContainer}>
+          {Array.from({ length: TOTAL_SLIDES }).map((_, index) => (
+            <View
+              key={index}
+              style={[
+                styles.progressDot,
+                index <= currentSlide && styles.progressDotActive
+              ]}
+            />
+          ))}
+        </View>
+        
+        <Pressable onPress={() => setHasOnboarded(true)}>
+          <Text style={styles.skipText}>Skip</Text>
+        </Pressable>
+      </View>
 
-          {index === 1 && (
-            <SlideWrapper index={1} onSkip={onSkip} title="Forget the guessing" subtitle="Smart, adaptive programs that evolve with you">
-              <View style={{ flex: 1, justifyContent: 'center' }}>
-                <Image
-                  source={{ uri: 'https://images.unsplash.com/photo-1517963628607-235ccdd5476b?q=80&w=1200&auto=format&fit=crop' }}
-                  style={styles.mockImage}
-                />
-                <View style={styles.cardsRow}>
-                  <FeatureCard icon="sparkles" title="Personalized" subtitle="Weekly plan made for you" />
-                  <FeatureCard icon="stats-chart" title="Adaptive" subtitle="Adjusts to your progress" />
-                </View>
-              </View>
-              <View style={styles.navRow}>
-                <BackButton onPress={goBack} />
-                <NextButton onPress={goNext} />
-              </View>
-            </SlideWrapper>
-          )}
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {renderSlide()}
+      </ScrollView>
 
-          {index === 2 && (
-            <SlideWrapper index={2} onSkip={onSkip} title="Train anywhere, learn always" subtitle="Workouts for home and gym, articles and challenges—all in one place">
-              <View style={styles.cardsRow}>
-                <FeatureCard imageUrl="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1200&auto=format&fit=crop" title="Home workouts" subtitle="No equipment needed" />
-                <FeatureCard imageUrl="https://images.unsplash.com/photo-1583454110551-c8e28b1f5d1a?q=80&w=1200&auto=format&fit=crop" title="Gym plans" subtitle="Strength & hypertrophy" />
-                <FeatureCard imageUrl="https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop" title="Articles" subtitle="Science-based tips" />
-                <FeatureCard imageUrl="https://images.unsplash.com/photo-1546483875-6fc57f2e7d08?q=80&w=1200&auto=format&fit=crop" title="Challenges" subtitle="Have fun with friends" />
-              </View>
-              <View style={styles.navRow}>
-                <BackButton onPress={goBack} />
-                <NextButton onPress={goNext} label="Sounds great!" />
-              </View>
-            </SlideWrapper>
-          )}
-
-          {index === 3 && (
-            <SlideWrapper index={3} onSkip={onSkip} title="Let's create your perfect plan" subtitle="Answer a few questions to tailor your training">
-              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <View style={styles.setupIconWrap}><Ionicons name="settings" size={40} color="#0A1224" /></View>
-              </View>
-              <View style={styles.navRow}>
-                <BackButton onPress={goBack} />
-                <NextButton onPress={goNext} label="Start setup" />
-              </View>
-            </SlideWrapper>
-          )}
-
-          {index === 4 && (
-            <SlideWrapper index={4} onSkip={onSkip} title="What is your main goal?" subtitle="Pick what motivates you most">
-              <View style={styles.optionList}>
-                {(['fat_loss', 'muscle', 'cardio'] as Goal[]).map((goal, idx) => (
-                  <Pressable
-                    key={idx}
-                    style={[styles.optionItem, profile.goals?.[0] === goal && styles.optionItemSelected]}
-                    onPress={() => updateProfile({ goals: [goal] })}
-                  >
-                    <Text style={styles.optionText}>{goal === 'fat_loss' ? 'Lose weight' : goal === 'muscle' ? 'Build muscle' : 'Endurance & tone'}</Text>
-                  </Pressable>
-                ))}
-              </View>
-              <View style={styles.navRow}>
-                <BackButton onPress={goBack} />
-                <NextButton onPress={goNext} />
-              </View>
-            </SlideWrapper>
-          )}
-
-          {index === 5 && (
-            <SlideWrapper index={5} onSkip={onSkip} title="What's your gender?" subtitle="Your basal metabolic rate will be calculated and your workout plan adapted accordingly">
-              <View style={styles.optionList}>
-                {[{key: 'male', label: 'Man', icon: 'male'}, {key: 'female', label: 'Woman', icon: 'female'}, {key: 'other', label: 'Non-binary', icon: 'transgender'}].map((option) => (
-                  <Pressable
-                    key={option.key}
-                    style={[styles.optionItem, profile.gender === option.key && styles.optionItemSelected]}
-                    onPress={() => updateProfile({ gender: option.key as 'male' | 'female' | 'other' })}
-                  >
-                    <Ionicons name={option.icon as any} size={24} color="#83C5FF" style={{ marginRight: 12 }} />
-                    <Text style={styles.optionText}>{option.label}</Text>
-                  </Pressable>
-                ))}
-              </View>
-              <View style={styles.navRow}>
-                <BackButton onPress={goBack} />
-                <NextButton onPress={goNext} />
-              </View>
-            </SlideWrapper>
-          )}
-
-          {index === 6 && (
-            <SlideWrapper index={6} onSkip={onSkip} title="Tell us a bit about you" subtitle="We use this to calibrate your plan">
-              <View style={{ alignItems: 'center', marginVertical: 8 }}>
-                <AgeSlider min={16} max={80} value={profile.age || 28} onChange={(v) => updateProfile({ age: v })} />
-              </View>
-              <View style={[styles.formRow, { marginTop: 12 }]}>
-                <VerticalSlider min={140} max={210} value={profile.heightCm || 175} onChange={(v) => updateProfile({ heightCm: v })} label="Height" unit="cm" />
-                <VerticalSlider min={45} max={150} value={profile.weightKg || 70} onChange={(v) => updateProfile({ weightKg: v })} label="Weight" unit="kg" />
-              </View>
-              <View style={styles.navRow}>
-                <BackButton onPress={goBack} />
-                <NextButton onPress={goNext} />
-              </View>
-            </SlideWrapper>
-          )}
-
-          {index === 7 && (
-            <SlideWrapper index={7} onSkip={onSkip} title="How do you like to train?" subtitle="This helps us choose the right programs">
-              <SectionTitle>Your level</SectionTitle>
-              <View style={styles.row}>
-                {LEVELS.map(l => (
-                  <Pill key={l} selected={profile.level === l} onPress={() => updateProfile({ level: l })}>{l}</Pill>
-                ))}
-              </View>
-              <SectionTitle>Where you'll train</SectionTitle>
-              <View style={styles.pillsWrap}>
-                {(Object.keys(LOCATION_LABEL) as Location[]).map(l => (
-                  <Pill key={l} selected={profile.locations?.includes(l)} onPress={() => {
-                    const set = new Set(profile.locations || []);
-                    set.has(l) ? set.delete(l) : set.add(l);
-                    updateProfile({ locations: Array.from(set) });
-                  }}>{LOCATION_LABEL[l]}</Pill>
-                ))}
-              </View>
-              <SectionTitle>Equipment</SectionTitle>
-              <View style={styles.pillsWrap}>
-                {(Object.keys(EQUIPMENT_LABEL) as Equipment[]).map(e => (
-                  <Pill key={e} selected={profile.equipment?.includes(e)} onPress={() => {
-                    const set = new Set(profile.equipment || []);
-                    set.has(e) ? set.delete(e) : set.add(e);
-                    updateProfile({ equipment: Array.from(set) });
-                  }}>{EQUIPMENT_LABEL[e]}</Pill>
-                ))}
-              </View>
-              <View style={styles.navRow}>
-                <BackButton onPress={goBack} />
-                <NextButton onPress={goNext} label="Almost there!" />
-              </View>
-            </SlideWrapper>
-          )}
-
-          {index === 7 && (
-            <SlideWrapper index={7} onSkip={onSkip} title="Building your personal plan..." subtitle="Selecting programs, creating your first-week schedule, tuning recommendations">
-              <View style={styles.finalWrap}>
-                <View style={{ width: 180, height: 180, alignItems: 'center', justifyContent: 'center' }}>
-                  <ProgressRing size={160} strokeWidth={10} progress={0} trackColor="#12203A" progressColor="#83C5FF" />
-                  <Animated.View style={[styles.absoluteCenter]}>
-                    <AnimatedProgress progressSV={finalProgress} />
-                  </Animated.View>
-                  <OrbitIcon radius={90} angleOffset={0} icon="flame" color="#FF8A65" />
-                  <OrbitIcon radius={90} angleOffset={2.1} icon="barbell" color="#83C5FF" />
-                  <OrbitIcon radius={90} angleOffset={4.2} icon="home" color="#34D399" />
-                </View>
-                <Text style={[styles.lead, { marginTop: 16 }]}>Almost done — preparing your first workout...</Text>
-              </View>
-              <View style={styles.navRow}>
-                <BackButton onPress={goBack} />
-                <NextButton onPress={() => setHasOnboarded(true)} label="Start my journey!" disabled={!planReady || !canFinish} />
-              </View>
-            </SlideWrapper>
-          )}
-        </Animated.View>
-      </GestureDetector>
+      <View style={styles.footer}>
+        <Pressable
+          style={[
+            styles.nextButton, 
+            currentSlide === TOTAL_SLIDES - 1 && styles.completeButton,
+            !isSlideValid() && styles.nextButtonDisabled
+          ]}
+          onPress={nextSlide}
+          disabled={!isSlideValid()}
+        >
+          <Text style={[styles.nextButtonText, !isSlideValid() && styles.nextButtonTextDisabled]}>
+            {currentSlide === TOTAL_SLIDES - 1 ? 'Complete' : 'Next'}
+          </Text>
+        </Pressable>
+      </View>
     </View>
   );
 };
 
-// Animated progress ring overlay using existing ProgressRing component
-const AnimatedProgress: React.FC<{ progressSV: Animated.SharedValue<number> }> = ({ progressSV }) => {
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: progressSV.value,
-    transform: [{ scale: 0.8 + 0.2 * progressSV.value }],
-  }));
-  
-  return (
-    <Animated.View style={[{ position: 'absolute' }, animatedStyle]}>
-      <ProgressRing 
-        size={160} 
-        strokeWidth={10} 
-        progress={1} 
-        trackColor="rgba(255,255,255,0.2)" 
-        progressColor="#83C5FF" 
-      />
-    </Animated.View>
-  );
-};
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0A1224', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 24 },
-  optionList: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  optionItem: { width: '90%', padding: 16, marginVertical: 8, borderRadius: 8, backgroundColor: '#E8F1FF', flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start' },
-  optionItemSelected: { backgroundColor: '#83C5FF' },
-  optionText: { fontSize: 16, color: '#0A1224' },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  skip: { color: '#94A3B8', fontSize: 14 },
-  slide: { flex: 1 },
-  title: { color: 'white', fontSize: 24, fontWeight: '800', marginBottom: 6 },
-  subtitle: { color: '#94A3B8', fontSize: 15, marginBottom: 16 },
-  lead: { color: '#CBD5E1', fontSize: 16, textAlign: 'center' },
-  cardsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12, columnGap: 12 },
-  card: { width: '48%', backgroundColor: 'white', borderRadius: 16, padding: 14 },
-  cardIconWrap: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#83C5FF', alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  cardTitle: { color: '#0A1224', fontWeight: '800', fontSize: 14, marginBottom: 4 },
-  cardSubtitle: { color: '#334155', fontSize: 12 },
-  cardImage: { width: '100%', height: 90, borderRadius: 12, marginBottom: 8 },
-  pillsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  pill: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 999, backgroundColor: '#111827', borderColor: '#1F2937', borderWidth: 1 },
-  pillSelected: { backgroundColor: '#83C5FF' },
-  pillText: { color: '#83C5FF', fontWeight: '700' },
-  pillTextSelected: { color: '#0A1224' },
-  sectionTitle: { color: '#E2E8F0', fontWeight: '800', marginTop: 8, marginBottom: 6 },
-  navRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 18 },
-  nextBtn: { flexDirection: 'row', backgroundColor: '#83C5FF', paddingVertical: 12, paddingHorizontal: 16, borderRadius: 14, alignItems: 'center' },
-  nextBtnText: { color: '#0A1224', fontWeight: '800', marginRight: 8 },
-  backBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 6 },
-  backBtnText: { color: '#83C5FF', fontWeight: '700', marginLeft: 6 },
-  formRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, marginBottom: 8 },
-  inputBlock: { flex: 1 },
-  inputLabel: { color: '#94A3B8', marginBottom: 6 },
-  input: { backgroundColor: '#111827', borderColor: '#1F2937', borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, color: 'white' },
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  bottomProgressWrap: { marginTop: 16 },
-  bottomProgressBarBg: { height: 6, backgroundColor: '#12203A', borderRadius: 999, overflow: 'hidden' },
-  bottomProgressBarFill: { height: 6, backgroundColor: '#83C5FF' },
-  bottomProgressText: { color: '#94A3B8', fontSize: 12, marginTop: 6, textAlign: 'center' },
-  heroImage: { width: '100%', height: 220, borderRadius: 16, marginBottom: 16 },
-  mockImage: { width: '100%', height: 180, borderRadius: 16, marginBottom: 16 },
-  setupIconWrap: { width: 84, height: 84, borderRadius: 20, backgroundColor: '#83C5FF', alignItems: 'center', justifyContent: 'center' },
-  // Sliders
-  sliderTrack: { width: 280, height: 40, backgroundColor: '#111827', borderRadius: 999, justifyContent: 'center', overflow: 'hidden' },
-  sliderFill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: '#1F3B63' },
-  sliderKnob: { position: 'absolute', width: 24, height: 24, borderRadius: 12, backgroundColor: '#83C5FF', top: 8 },
-  sliderLabel: { position: 'absolute', alignSelf: 'center', color: '#E2E8F0', fontSize: 12 },
-  vSliderWrap: { flex: 1, alignItems: 'center' },
-  vSliderTrack: { width: 56, height: 180, backgroundColor: '#111827', borderRadius: 16, overflow: 'hidden', justifyContent: 'flex-end', alignItems: 'center' },
-  vSliderFill: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#1F3B63' },
-  vSliderKnob: { width: 24, height: 24, borderRadius: 12, backgroundColor: '#83C5FF' },
-  vSliderTitle: { color: '#E2E8F0', marginBottom: 6, fontWeight: '700' },
-  vSliderValue: { color: '#94A3B8', marginTop: 6 },
-  finalWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  absoluteCenter: { position: 'absolute', top: 10, left: 10 },
-  orbitIcon: { position: 'absolute' },
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
+  },
+  progressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  progressDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#E0E0E0',
+    marginHorizontal: 4,
+  },
+  progressDotActive: {
+    backgroundColor: '#4CAF50',
+  },
+  skipText: {
+    fontSize: 16,
+    color: '#666',
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  slideContainer: {
+    flex: 1,
+    paddingVertical: 20,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 40,
+  },
+  pillContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  pillButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 25,
+    backgroundColor: '#F5F5F5',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  pillButtonSelected: {
+    backgroundColor: '#4CAF50',
+    borderColor: '#4CAF50',
+  },
+  pillButtonText: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
+  },
+  pillButtonTextSelected: {
+    color: '#FFFFFF',
+  },
+  formGroup: {
+    marginBottom: 24,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    backgroundColor: '#FAFAFA',
+  },
+  stepperContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepperButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F5F5F5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  stepperValue: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginHorizontal: 20,
+    minWidth: 40,
+    textAlign: 'center',
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#F5F5F5',
+    borderRadius: 8,
+    padding: 4,
+  },
+  toggleButton: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderRadius: 6,
+  },
+  toggleButtonSelected: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  toggleButtonText: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
+  },
+  toggleButtonTextSelected: {
+    color: '#333',
+    fontWeight: '600',
+  },
+  experienceButton: {
+    flex: 1,
+    paddingVertical: 16,
+    alignItems: 'center',
+    borderRadius: 8,
+    backgroundColor: '#F5F5F5',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    marginHorizontal: 6,
+  },
+  experienceButtonSelected: {
+    backgroundColor: '#4CAF50',
+    borderColor: '#4CAF50',
+  },
+  experienceButtonText: {
+    fontSize: 16,
+    color: '#666',
+    fontWeight: '500',
+  },
+  experienceButtonTextSelected: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  sliderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  sliderButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F5F5F5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  sliderButtonText: {
+    fontSize: 18,
+    color: '#666',
+    fontWeight: '600',
+  },
+  sliderTrack: {
+    flex: 1,
+    height: 4,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 2,
+    marginHorizontal: 12,
+    overflow: 'hidden',
+  },
+  sliderFill: {
+    height: '100%',
+    backgroundColor: '#4CAF50',
+  },
+  daysContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 30,
+  },
+  dayButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F5F5F5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  dayButtonSelected: {
+    backgroundColor: '#4CAF50',
+    borderColor: '#4CAF50',
+  },
+  dayButtonText: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '600',
+  },
+  dayButtonTextSelected: {
+    color: '#FFFFFF',
+  },
+  timeContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    gap: 8,
+  },
+  timeButton: {
+    flex: 1,
+    paddingVertical: 16,
+    alignItems: 'center',
+    borderRadius: 12,
+    backgroundColor: '#F5F5F5',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  timeButtonSelected: {
+    backgroundColor: '#4CAF50',
+    borderColor: '#4CAF50',
+  },
+  timeButtonText: {
+    fontSize: 16,
+    color: '#666',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  timeButtonTextSelected: {
+    color: '#FFFFFF',
+  },
+  timeSubtext: {
+    fontSize: 14,
+    color: '#999',
+  },
+  customTimeButton: {
+    paddingVertical: 16,
+    alignItems: 'center',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#4CAF50',
+    marginBottom: 30,
+  },
+  customTimeButtonSelected: {
+    backgroundColor: '#4CAF50',
+  },
+  customTimeText: {
+    fontSize: 16,
+    color: '#4CAF50',
+    fontWeight: '600',
+  },
+  customTimeTextSelected: {
+    color: '#FFFFFF',
+  },
+  customTimeInputContainer: {
+    marginBottom: 20,
+  },
+  iosTimePickerContainer: {
+    flexDirection: 'row',
+    height: 200,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  pickerColumn: {
+    flex: 1,
+    height: '100%',
+  },
+  pickerScrollView: {
+    flex: 1,
+  },
+  pickerPadding: {
+    height: 80,
+  },
+  pickerOption: {
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pickerOptionText: {
+    fontSize: 18,
+    color: '#666666',
+    fontWeight: '400',
+  },
+  pickerOptionTextSelected: {
+    color: '#007AFF',
+    fontWeight: '600',
+    fontSize: 20,
+  },
+  pickerSelectionIndicator: {
+    position: 'absolute',
+    top: '50%',
+    left: 0,
+    right: 0,
+    height: 40,
+    marginTop: -20,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#E0E0E0',
+    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+    pointerEvents: 'none',
+  },
+  switchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    backgroundColor: '#F9F9F9',
+    borderRadius: 12,
+  },
+  switchLabel: {
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '500',
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: '#E0E0E0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  checkboxText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+  },
+  footer: {
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+    paddingTop: 20,
+  },
+  nextButton: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  nextButtonDisabled: {
+    backgroundColor: '#E0E0E0',
+  },
+  completeButton: {
+    backgroundColor: '#2196F3',
+  },
+  nextButtonText: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  nextButtonTextDisabled: {
+    color: '#999999',
+  },
 });
 
 export default OnboardingScreen;
