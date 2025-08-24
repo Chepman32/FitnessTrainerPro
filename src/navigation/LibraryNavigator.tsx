@@ -2,10 +2,9 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useColorScheme, Text, View, StyleSheet, Pressable, Alert } from 'react-native';
 import { Content, LibrarySection, Workout } from '../types/library';
-import { Program } from '../types/program';
+import { Program, Step } from '../types/program';
 import { LibraryScreen } from '../screens/LibraryScreen';
 import { SeeAllScreen } from '../screens/SeeAllScreen';
-import { TrainingScreen } from '../screens/TrainingScreen';
 
 // Navigation parameter types
 export type LibraryStackParamList = {
@@ -198,20 +197,46 @@ const LibraryMainScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 };
 
 // Screen components
+
+// SeeAllSectionScreen is now implemented as SeeAllScreen component
+
 const SearchResultsScreen: React.FC<{ route: any; navigation: any }> = ({
   route,
   navigation: _navigation,
 }) => {
-  const { query, filters } = route.params;
-  console.log('Search:', query, filters);
-  return <View><Text>Search Results</Text></View>;
+  const { query } = route.params;
+  const isDark = useColorScheme() === 'dark';
+  
+  return (
+    <View style={[
+      styles.screenContainer, 
+      { backgroundColor: isDark ? '#000000' : '#FFFFFF' }
+    ]}>
+      <Text style={[
+        styles.screenTitle,
+        { color: isDark ? '#FFFFFF' : '#000000' }
+      ]}>
+        Search Results
+      </Text>
+      <Text style={[
+        styles.screenSubtitle,
+        { color: isDark ? '#CCCCCC' : '#666666' }
+      ]}>
+        Results for "{query || 'your search'}"
+      </Text>
+      <Text style={[
+        styles.screenDescription,
+        { color: isDark ? '#AAAAAA' : '#888888' }
+      ]}>
+        Search functionality coming soon!
+      </Text>
+    </View>
+  );
 };
-
-// SeeAllSectionScreen is now implemented as SeeAllScreen component
 
 const ContentDetailScreen: React.FC<{ route: any; navigation: any }> = ({
   route,
-  navigation,
+  navigation: _navigation,
 }) => {
   const { content, source } = route.params;
   const isDark = useColorScheme() === 'dark';
@@ -446,7 +471,7 @@ const ChallengeDetailScreen: React.FC<{ route: any; navigation: any }> = ({
 
 const ArticleDetailScreen: React.FC<{ route: any; navigation: any }> = ({
   route,
-  navigation,
+  navigation: _navigation,
 }) => {
   const { content } = route.params;
   const isDark = useColorScheme() === 'dark';
@@ -486,6 +511,33 @@ const ArticleDetailScreen: React.FC<{ route: any; navigation: any }> = ({
 
 // Utility function to convert Workout to Program format
 const convertWorkoutToProgram = (workout: Workout): Program => {
+  const steps: Step[] = [
+    {
+      id: 'warmup',
+      type: 'exercise',
+      title: 'Warm-up',
+      description: 'Get ready for your workout',
+      durationSec: Math.min(300, workout.durationMinutes * 12), // 5min max or 20% of workout
+      equipment: workout.equipment
+    },
+    {
+      id: 'main_exercise',
+      type: 'exercise',
+      title: workout.title,
+      description: workout.goals.join(', '),
+      durationSec: Math.round(workout.durationMinutes * 60 * 0.6), // 60% for main exercise
+      equipment: workout.equipment
+    },
+    {
+      id: 'cooldown',
+      type: 'exercise',
+      title: 'Cool Down',
+      description: 'Stretch and recover',
+      durationSec: Math.min(300, workout.durationMinutes * 12), // 5min max or 20% of workout
+      equipment: ['none']
+    }
+  ];
+
   return {
     id: workout.id,
     title: workout.title,
@@ -495,82 +547,143 @@ const convertWorkoutToProgram = (workout: Workout): Program => {
     tags: workout.tags,
     estimatedCalories: workout.estimatedCalories,
     thumbnailUrl: workout.coverUrl,
-    totalDurationSec: workout.durationMinutes * 60,
-    totalActiveSec: Math.round(workout.durationMinutes * 60 * 0.7), // Estimate 70% active time
-    totalRestSec: Math.round(workout.durationMinutes * 60 * 0.3), // Estimate 30% rest time
+    totalActiveSec: steps.reduce((sum, step) => sum + step.durationSec, 0),
+    totalRestSec: 0, // No rest steps in this simple conversion
+    stepsCount: steps.length,
     createdAt: workout.createdAt,
     updatedAt: workout.updatedAt,
-    steps: [
-      {
-        id: 'warmup',
-        type: 'exercise',
-        title: 'Warm-up',
-        description: 'Get ready for your workout',
-        durationSec: Math.min(300, workout.durationMinutes * 12), // 5min max or 20% of workout
-        restAfterSec: 30,
-        instructions: ['Start with some light movement', 'Prepare your body for exercise'],
-        exerciseType: 'warmup',
-        targetMuscles: [],
-        equipment: workout.equipment,
-        safetyTips: ['Listen to your body', 'Stop if you feel pain']
-      },
-      {
-        id: 'main_exercise',
-        type: 'exercise',
-        title: workout.title,
-        description: workout.goals.join(', '),
-        durationSec: Math.round(workout.durationMinutes * 60 * 0.6), // 60% for main exercise
-        restAfterSec: 60,
-        instructions: ['Follow the exercise routine', 'Maintain proper form'],
-        exerciseType: workout.goals[0] || 'cardio',
-        targetMuscles: [],
-        equipment: workout.equipment,
-        safetyTips: ['Maintain proper form', 'Take breaks if needed']
-      },
-      {
-        id: 'cooldown',
-        type: 'exercise',
-        title: 'Cool Down',
-        description: 'Stretch and recover',
-        durationSec: Math.min(300, workout.durationMinutes * 12), // 5min max or 20% of workout
-        restAfterSec: 0,
-        instructions: ['Stretch your muscles', 'Take deep breaths'],
-        exerciseType: 'stretching',
-        targetMuscles: [],
-        equipment: ['none'],
-        safetyTips: ['Hold stretches gently', 'Breathe deeply']
-      }
-    ]
+    steps
   };
 };
 
-const WorkoutPlayerScreen: React.FC<{ route: any; navigation: any }> = ({
-  route,
-  navigation,
-}) => {
+const WorkoutPlayerScreen: React.FC<{ route: any; navigation: any }> = ({ route, navigation }) => {
   const { content } = route.params;
   const workout = content as Workout;
+  const isDark = useColorScheme() === 'dark';
   
-  // Convert workout to program format
-  const program = convertWorkoutToProgram(workout);
-  
-  const handleComplete = (results: any) => {
-    // Navigate back or to completion screen
-    navigation.goBack();
-  };
-  
-  const handleExit = () => {
-    navigation.goBack();
+  const handleStartWorkout = () => {
+    // Convert workout to program format and navigate to training
+    const program = convertWorkoutToProgram(workout);
+    
+    // Navigate to the main app's training screen
+    navigation.navigate('complexTraining', {
+      program,
+      soundsEnabled: true,
+      vibrationsEnabled: true,
+    });
   };
   
   return (
-    <TrainingScreen
-      program={program}
-      soundsEnabled={true}
-      vibrationsEnabled={true}
-      onComplete={handleComplete}
-      onExit={handleExit}
-    />
+    <View style={[
+      styles.workoutPlayerContainer, 
+      { backgroundColor: isDark ? '#000000' : '#FFFFFF' }
+    ]}>
+      {/* Workout Header */}
+      <View style={styles.workoutHeader}>
+        <Text style={[
+          styles.workoutTitle,
+          { color: isDark ? '#FFFFFF' : '#000000' }
+        ]}>
+          {workout.title}
+        </Text>
+        
+        <View style={styles.workoutMeta}>
+          <View style={styles.metaItem}>
+            <Text style={[styles.metaLabel, { color: isDark ? '#CCCCCC' : '#666666' }]}>
+              Duration
+            </Text>
+            <Text style={[styles.metaValue, { color: isDark ? '#FFFFFF' : '#000000' }]}>
+              {workout.durationMinutes} min
+            </Text>
+          </View>
+          
+          <View style={styles.metaItem}>
+            <Text style={[styles.metaLabel, { color: isDark ? '#CCCCCC' : '#666666' }]}>
+              Level
+            </Text>
+            <Text style={[styles.metaValue, { color: isDark ? '#FFFFFF' : '#000000' }]}>
+              {workout.level}
+            </Text>
+          </View>
+          
+          <View style={styles.metaItem}>
+            <Text style={[styles.metaLabel, { color: isDark ? '#CCCCCC' : '#666666' }]}>
+              Calories
+            </Text>
+            <Text style={[styles.metaValue, { color: isDark ? '#FFFFFF' : '#000000' }]}>
+              ~{workout.estimatedCalories}
+            </Text>
+          </View>
+        </View>
+      </View>
+      
+      {/* Workout Details */}
+      <View style={styles.workoutDetails}>
+        <Text style={[
+          styles.sectionTitle,
+          { color: isDark ? '#FFFFFF' : '#000000' }
+        ]}>
+          About This Workout
+        </Text>
+        
+        <Text style={[
+          styles.workoutDescription,
+          { color: isDark ? '#CCCCCC' : '#666666' }
+        ]}>
+          A {workout.durationMinutes}-minute {workout.level.toLowerCase()} workout focusing on {workout.goals.join(', ')}.
+        </Text>
+        
+        <View style={styles.equipmentSection}>
+          <Text style={[
+            styles.sectionTitle,
+            { color: isDark ? '#FFFFFF' : '#000000' }
+          ]}>
+            Equipment Needed
+          </Text>
+          <Text style={[
+            styles.equipmentText,
+            { color: isDark ? '#CCCCCC' : '#666666' }
+          ]}>
+            {workout.equipment.includes('none') ? 'No equipment required' : workout.equipment.join(', ')}
+          </Text>
+        </View>
+        
+        <View style={styles.goalsSection}>
+          <Text style={[
+            styles.sectionTitle,
+            { color: isDark ? '#FFFFFF' : '#000000' }
+          ]}>
+            Goals
+          </Text>
+          <View style={styles.goalsList}>
+            {workout.goals.map((goal: string, index: number) => (
+              <View key={index} style={styles.goalBadge}>
+                <Text style={styles.goalText}>{goal}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      </View>
+      
+      {/* Start Button */}
+      <View style={styles.startButtonContainer}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.startButton,
+            workout.premium && styles.premiumButton,
+            pressed && styles.startButtonPressed
+          ]}
+          onPress={handleStartWorkout}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel={`Start ${workout.title} workout`}
+        >
+          <Text style={styles.startButtonText}>
+            {workout.premium ? 'Start Premium Workout' : 'Start Workout'}
+          </Text>
+        </Pressable>
+      </View>
+    </View>
   );
 };
 
@@ -702,5 +815,36 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: '700',
+  },
+  
+  // Workout Player Styles
+  workoutPlayerContainer: {
+    flex: 1,
+    padding: 20,
+  },
+  workoutHeader: {
+    marginBottom: 30,
+  },
+  workoutTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  workoutMeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 16,
+    borderRadius: 12,
+    backgroundColor: 'rgba(91, 155, 255, 0.1)',
+  },
+  workoutDetails: {
+    flex: 1,
+  },
+  workoutDescription: {
+    fontSize: 16,
+    lineHeight: 24,
+    marginBottom: 24,
+    textAlign: 'center',
   },
 });

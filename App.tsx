@@ -10,13 +10,12 @@ import { UserProgressProvider } from './src/state/UserProgressContext';
 import { FavoritesProvider } from './src/state/FavoritesContext';
 import HomeScreen from './src/screens/HomeScreen';
 import SetupScreen from './src/screens/SetupScreen';
-import { OriginalTrainingScreen } from './src/screens/OriginalTrainingScreen';
+import { TrainingScreen } from './src/screens/TrainingScreen';
 import DoneScreen from './src/screens/DoneScreen';
 import { LibraryNavigator } from './src/navigation/LibraryNavigator';
 import { ArticleDetailScreen } from './src/screens/ArticleDetailScreen';
 import { FavoritesScreen } from './src/screens/FavoritesScreen';
 import { ProgramStartScreen } from './src/screens/ProgramStartScreen';
-import { TrainingScreen as ComplexTrainingScreen } from './src/screens/TrainingScreen';
 import { ProgramFinishScreen } from './src/screens/ProgramFinishScreen';
 import { ProgramsTestScreen } from './src/screens/ProgramsTestScreen';
 import { NavigationContainer } from '@react-navigation/native';
@@ -28,6 +27,8 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import SplashScreen from './src/screens/SplashScreen';
 import OnboardingScreen from './src/screens/OnboardingScreen';
 import { OnboardingProvider, useOnboarding } from './src/state/OnboardingContext';
+import { Program, ExerciseStep, RestStep } from './src/types/program';
+import { TRAINING_TYPES } from './src/data/trainingTypes';
 
 type RootStackParamList = {
   home: undefined;
@@ -43,6 +44,87 @@ type RootStackParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
+
+// Function to create a dynamic training program based on session setup
+const createDynamicTrainingProgram = (setup: any): Program => {
+  const { typeId, durationMin, difficulty } = setup;
+  
+  // Convert duration to seconds (0.05 = 3 seconds, others are in minutes)
+  const totalDurationSec = durationMin === 0.05 ? 3 : durationMin * 60;
+  
+  // Get the selected training type
+  const trainingType = TRAINING_TYPES.find(t => t.id === typeId);
+  const exerciseTitle = trainingType?.title || 'Custom Exercise';
+  
+  // Create a simple program with the specified duration
+  const steps: (ExerciseStep | RestStep)[] = [];
+  
+  if (totalDurationSec <= 10) {
+    // For very short durations (3-10 seconds), just do one exercise
+    steps.push({
+      id: 'quick_exercise',
+      type: 'exercise',
+      title: exerciseTitle,
+      durationSec: totalDurationSec,
+      description: `Quick ${exerciseTitle.toLowerCase()} session`,
+      icon: '⚡',
+      animationRef: typeId || 'pushups',
+      targetReps: Math.max(1, Math.floor(totalDurationSec / 2)),
+      equipment: []
+    });
+  } else {
+    // For longer durations, create a proper workout structure
+    const exerciseDuration = Math.floor(totalDurationSec * 0.8); // 80% exercise, 20% rest
+    const restDuration = totalDurationSec - exerciseDuration;
+    
+    // Split into multiple exercises if duration allows
+    const numExercises = Math.max(1, Math.floor(exerciseDuration / 30)); // 30 seconds per exercise
+    const exerciseTimePerStep = Math.floor(exerciseDuration / numExercises);
+    
+    for (let i = 0; i < numExercises; i++) {
+      steps.push({
+        id: `exercise_${i + 1}`,
+        type: 'exercise',
+        title: `${exerciseTitle} ${i + 1}`,
+        durationSec: exerciseTimePerStep,
+        description: `Round ${i + 1} of ${exerciseTitle.toLowerCase()}`,
+        icon: '💪',
+        animationRef: typeId || 'pushups',
+        targetReps: Math.max(1, Math.floor(exerciseTimePerStep / 2)),
+        equipment: []
+      });
+      
+      // Add rest between exercises (except after the last one)
+      if (i < numExercises - 1 && restDuration > 0) {
+        const restTime = Math.min(15, Math.floor(restDuration / (numExercises - 1)));
+        steps.push({
+          id: `rest_${i + 1}`,
+          type: 'rest',
+          title: 'Rest',
+          durationSec: restTime,
+          tip: 'Take a quick breather'
+        });
+      }
+    }
+  }
+  
+  return {
+    id: `dynamic_${typeId}_${durationMin}`,
+    title: `${exerciseTitle} - ${durationMin === 0.05 ? '3 sec' : `${durationMin} min`}`,
+    level: difficulty,
+    description: `Custom ${exerciseTitle.toLowerCase()} workout for ${durationMin === 0.05 ? '3 seconds' : `${durationMin} minutes`}`,
+    totalActiveSec: steps.filter(s => s.type === 'exercise').reduce((sum, s) => sum + s.durationSec, 0),
+    totalRestSec: steps.filter(s => s.type === 'rest').reduce((sum, s) => sum + s.durationSec, 0),
+    stepsCount: steps.length,
+    tags: ['Custom', 'Dynamic', difficulty],
+    steps,
+    estimatedCalories: Math.round((durationMin === 0.05 ? 0.05 : durationMin) * 8.6),
+    thumbnailUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+    difficulty: difficulty === 'Light' ? 1 : difficulty === 'Easy' ? 2 : difficulty === 'Middle' ? 3 : difficulty === 'Stunt' ? 4 : difficulty === 'Hardcore' ? 5 : 6,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+};
 
 function HomeTabs() {
   const { setSetup } = useSession();
@@ -122,6 +204,22 @@ function HomeTabs() {
   );
 }
 
+// Wrapper component to use hooks properly
+const TrainingScreenWrapper: React.FC<{ navigation: any }> = ({ navigation }) => {
+  const { setup } = useSession();
+  const dynamicProgram = createDynamicTrainingProgram(setup);
+  
+  return (
+    <TrainingScreen
+      program={dynamicProgram}
+      soundsEnabled={true}
+      vibrationsEnabled={true}
+      onComplete={() => navigation.navigate('done')}
+      onExit={() => navigation.navigate('home')}
+    />
+  );
+};
+
 function AppStack() {
   return (
     <Stack.Navigator
@@ -138,12 +236,9 @@ function AppStack() {
         )}
       </Stack.Screen>
       <Stack.Screen name="training">
-        {({ navigation }) => (
-          <OriginalTrainingScreen
-            onComplete={() => navigation.navigate('done')}
-            onExit={() => navigation.navigate('home')}
-          />
-        )}
+        {({ navigation }) => {
+          return <TrainingScreenWrapper navigation={navigation} />;
+        }}
       </Stack.Screen>
       <Stack.Screen name="done">
         {({ navigation }) => (
@@ -188,7 +283,7 @@ function AppStack() {
         options={{ headerShown: false }}
       >
         {({ navigation, route }) => (
-          <ComplexTrainingScreen
+          <TrainingScreen
             program={route.params.program}
             soundsEnabled={route.params.soundsEnabled}
             vibrationsEnabled={route.params.vibrationsEnabled}
