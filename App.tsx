@@ -13,8 +13,8 @@ import SetupScreen from './src/screens/SetupScreen';
 import { TrainingScreen } from './src/screens/TrainingScreen';
 import DoneScreen from './src/screens/DoneScreen';
 import { LibraryNavigator } from './src/navigation/LibraryNavigator';
+import { ProfileNavigator } from './src/navigation/ProfileNavigator';
 import { ArticleDetailScreen } from './src/screens/ArticleDetailScreen';
-import { FavoritesScreen } from './src/screens/FavoritesScreen';
 import { ProgramStartScreen } from './src/screens/ProgramStartScreen';
 import { ProgramFinishScreen } from './src/screens/ProgramFinishScreen';
 import { ProgramsTestScreen } from './src/screens/ProgramsTestScreen';
@@ -168,22 +168,6 @@ function HomeTabs() {
         {() => <LibraryNavigator />}
       </Tab.Screen>
       <Tab.Screen
-        name="Favorites"
-        options={{
-          tabBarIcon: ({ focused, color, size }) => (
-            <Ionicons name={focused ? 'heart' : 'heart-outline'} size={size ?? 24} color={color as string} />
-          ),
-        }}
-      >
-        {({ navigation }) => (
-          <FavoritesScreen 
-            onArticlePress={(article) => {
-              navigation.navigate('articleDetail', { article });
-            }}
-          />
-        )}
-      </Tab.Screen>
-      <Tab.Screen
         name="Programs"
         options={{
           tabBarIcon: ({ focused, color, size }) => (
@@ -199,6 +183,16 @@ function HomeTabs() {
             onBack={() => navigation.goBack()}
           />
         )}
+      </Tab.Screen>
+      <Tab.Screen
+        name="Profile"
+        options={{
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons name={focused ? 'person' : 'person-outline'} size={size ?? 24} color={color as string} />
+          ),
+        }}
+      >
+        {() => <ProfileNavigator />}
       </Tab.Screen>
     </Tab.Navigator>
   );
