@@ -25,7 +25,7 @@ const mockWorkout: Content = {
   equipment: ['none'],
   locations: ['home'],
   goals: ['cardio'],
-  exercises: ['jumping_jacks', 'burpees'],
+  exercises: ['jumping-jacks', 'burpees'],
   estimatedCalories: 120,
 };
 

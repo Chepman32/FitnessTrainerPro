@@ -8,8 +8,8 @@ export type ExerciseIconId =
   | 'burpees'
   | 'lunges'
   | 'crunches'
-  | 'mountain_climbers'
-  | 'jumping_jacks';
+  | 'mountain-climbers'
+  | 'jumping-jacks';
 
 type IconProps = { color?: string; size?: number };
 
@@ -476,9 +476,9 @@ export function ExerciseIcon({
       return <Lunges color={color} size={size} />;
     case 'crunches':
       return <Crunches color={color} size={size} />;
-    case 'mountain_climbers':
+    case 'mountain-climbers':
       return <MountainClimbers color={color} size={size} />;
-    case 'jumping_jacks':
+    case 'jumping-jacks':
       return <JumpingJacks color={color} size={size} />;
     default:
       return <JumpingJacks color={color} size={size} />;

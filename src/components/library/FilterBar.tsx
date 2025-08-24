@@ -167,10 +167,10 @@ const EQUIPMENT_FILTERS: FilterChipData[] = [
 ];
 
 const DURATION_FILTERS: FilterChipData[] = [
-  { id: 'under_10', label: 'Under 10 min', type: 'duration', value: [0, 10] },
-  { id: '10_20', label: '10-20 min', type: 'duration', value: [10, 20] },
-  { id: '20_40', label: '20-40 min', type: 'duration', value: [20, 40] },
-  { id: 'over_40', label: '40+ min', type: 'duration', value: [40, 180] },
+  { id: 'under-10', label: 'Under 10 min', type: 'duration', value: [0, 10] },
+  { id: '10-20', label: '10-20 min', type: 'duration', value: [10, 20] },
+  { id: '20-40', label: '20-40 min', type: 'duration', value: [20, 40] },
+  { id: 'over-40', label: '40+ min', type: 'duration', value: [40, 180] },
 ];
 
 const SORT_FILTERS: FilterChipData[] = [

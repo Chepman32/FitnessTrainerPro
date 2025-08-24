@@ -21,6 +21,6 @@ export const TRAINING_TYPES: TrainingType[] = [
   { id: 'burpees', title: 'Burpees', tags: ['Full body'] },
   { id: 'lunges', title: 'Lunges', tags: ['Lower body'] },
   { id: 'crunches', title: 'Crunches', tags: ['Core'] },
-  { id: 'mountain_climbers', title: 'Mountain Climbers', tags: ['Core', 'Cardio'] },
-  { id: 'jumping_jacks', title: 'Jumping Jacks', tags: ['Cardio'] },
+  { id: 'mountain-climbers', title: 'Mountain Climbers', tags: ['Core', 'Cardio'] },
+  { id: 'jumping-jacks', title: 'Jumping Jacks', tags: ['Cardio'] },
 ];

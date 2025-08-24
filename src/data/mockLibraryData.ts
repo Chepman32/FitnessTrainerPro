@@ -121,7 +121,7 @@ export const MOCK_WORKOUTS: Workout[] = [
     equipment: ['none'],
     locations: ['home'],
     goals: ['cardio'],
-    exercises: ['jumping_jacks', 'pushups', 'squats'],
+    exercises: ['jumping-jacks', 'pushups', 'squats'],
     estimatedCalories: 50,
   },
   {
@@ -138,7 +138,7 @@ export const MOCK_WORKOUTS: Workout[] = [
     equipment: ['none'],
     locations: ['home'],
     goals: ['strength'],
-    exercises: ['plank', 'crunches', 'mountain_climbers'],
+    exercises: ['plank', 'crunches', 'mountain-climbers'],
     estimatedCalories: 80,
   },
   {
@@ -295,7 +295,7 @@ const CONTINUE_ITEMS: Workout[] = [
     equipment: ['none'],
     locations: ['home'],
     goals: ['flexibility'],
-    exercises: ['hip_circles', 'pigeon_pose'],
+    exercises: ['hip-circles', 'pigeon-pose'],
     estimatedCalories: 80,
   },
   {
@@ -333,7 +333,7 @@ const QUICK_START_ITEMS: Workout[] = [
     equipment: ['none'],
     locations: ['home'],
     goals: ['mobility'],
-    exercises: ['arm_circles', 'leg_swings'],
+    exercises: ['arm-circles', 'leg-swings'],
     estimatedCalories: 50,
   },
   {
@@ -350,7 +350,7 @@ const QUICK_START_ITEMS: Workout[] = [
     equipment: ['none'],
     locations: ['home'],
     goals: ['cardio', 'fat_loss'],
-    exercises: ['burpees', 'jumping_jacks'],
+    exercises: ['burpees', 'jumping-jacks'],
     estimatedCalories: 120,
   },
   {
@@ -367,7 +367,7 @@ const QUICK_START_ITEMS: Workout[] = [
     equipment: ['none'],
     locations: ['home'],
     goals: ['strength'],
-    exercises: ['plank', 'mountain_climbers'],
+    exercises: ['plank', 'mountain-climbers'],
     estimatedCalories: 100,
   },
   {
@@ -544,7 +544,7 @@ const NEW_THIS_WEEK: Workout[] = [
     equipment: ['kettlebell'],
     locations: ['gym', 'home'],
     goals: ['strength'],
-    exercises: ['kb_swings', 'kb_press'],
+    exercises: ['kb-swings', 'kb-press'],
     estimatedCalories: 200,
   },
   {
@@ -561,7 +561,7 @@ const NEW_THIS_WEEK: Workout[] = [
     equipment: ['none'],
     locations: ['home'],
     goals: ['flexibility'],
-    exercises: ['forward_fold', 'spinal_twist'],
+    exercises: ['forward-fold', 'spinal-twist'],
     estimatedCalories: 70,
   },
   {
@@ -578,7 +578,7 @@ const NEW_THIS_WEEK: Workout[] = [
     equipment: ['none'],
     locations: ['home'],
     goals: ['strength'],
-    exercises: ['glute_bridges', 'planks'],
+    exercises: ['glute-bridges', 'planks'],
     estimatedCalories: 120,
   },
   {
@@ -595,7 +595,7 @@ const NEW_THIS_WEEK: Workout[] = [
     equipment: ['none'],
     locations: ['office'],
     goals: ['mobility'],
-    exercises: ['neck_rolls', 'shoulder_shrugs'],
+    exercises: ['neck-rolls', 'shoulder-shrugs'],
     estimatedCalories: 40,
   },
 ];
@@ -686,7 +686,7 @@ export const MOCK_LIBRARY_SECTIONS: LibrarySection[] = [
         equipment: ['none'],
         locations: ['home'],
         goals: ['strength'],
-        exercises: ['hundred', 'roll_up'],
+        exercises: ['hundred', 'roll-up'],
         estimatedCalories: 150,
       },
     ],
