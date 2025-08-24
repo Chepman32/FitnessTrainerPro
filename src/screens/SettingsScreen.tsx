@@ -25,6 +25,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
   const [vibrationsEnabled, setVibrationsEnabled] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [analyticsEnabled, setAnalyticsEnabled] = useState(false);
+  const [unitsType, setUnitsType] = useState<'metric' | 'imperial'>('metric');
+  const [healthConnected, setHealthConnected] = useState(true);
+  const [doNotDisturbEnabled, setDoNotDisturbEnabled] = useState(true);
 
   const handleClearData = () => {
     Alert.alert(
@@ -58,6 +61,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
             setVibrationsEnabled(true);
             setNotificationsEnabled(false);
             setAnalyticsEnabled(false);
+            setUnitsType('metric');
+            setHealthConnected(true);
+            setDoNotDisturbEnabled(true);
             Alert.alert('Settings Reset', 'All settings have been reset to defaults.');
           }
         }
@@ -83,6 +89,19 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Units */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}>
+            Units
+          </Text>
+          
+          <UnitsSelector
+            selectedUnits={unitsType}
+            onUnitsChange={setUnitsType}
+            isDark={isDark}
+          />
+        </View>
+
         {/* Audio & Haptics */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}>
@@ -120,6 +139,28 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
             subtitle="Get notified about your workout schedule"
             value={notificationsEnabled}
             onValueChange={setNotificationsEnabled}
+            isDark={isDark}
+          />
+          
+          <DoNotDisturbItem
+            title="Do Not Disturb"
+            subtitle="9:00 PM–7:00 AM"
+            enabled={doNotDisturbEnabled}
+            onPress={() => setDoNotDisturbEnabled(!doNotDisturbEnabled)}
+            isDark={isDark}
+          />
+        </View>
+
+        {/* Health Integration */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}>
+            Health Integration
+          </Text>
+          
+          <HealthIntegrationItem
+            title="Apple Health or Google Fit"
+            connected={healthConnected}
+            onPress={() => setHealthConnected(!healthConnected)}
             isDark={isDark}
           />
         </View>
@@ -327,6 +368,141 @@ const ActionItem: React.FC<ActionItemProps> = ({
   );
 };
 
+// New Helper Components
+type UnitsSelectorProps = {
+  selectedUnits: 'metric' | 'imperial';
+  onUnitsChange: (units: 'metric' | 'imperial') => void;
+  isDark: boolean;
+};
+
+const UnitsSelector: React.FC<UnitsSelectorProps> = ({ selectedUnits, onUnitsChange, isDark }) => {
+  return (
+    <View style={[styles.unitsSelector, isDark && styles.unitsSelectorDark]}>
+      <Pressable
+        style={({ pressed }) => [
+          styles.unitsOption,
+          selectedUnits === 'metric' && styles.unitsOptionSelected,
+          isDark && styles.unitsOptionDark,
+          pressed && styles.unitsOptionPressed
+        ]}
+        onPress={() => onUnitsChange('metric')}
+      >
+        <Text style={[
+          styles.unitsOptionText,
+          selectedUnits === 'metric' && styles.unitsOptionTextSelected,
+          isDark && styles.unitsOptionTextDark
+        ]}>
+          Units
+        </Text>
+      </Pressable>
+      <Pressable
+        style={({ pressed }) => [
+          styles.unitsOption,
+          selectedUnits === 'imperial' && styles.unitsOptionSelected,
+          isDark && styles.unitsOptionDark,
+          pressed && styles.unitsOptionPressed
+        ]}
+        onPress={() => onUnitsChange('imperial')}
+      >
+        <Text style={[
+          styles.unitsOptionText,
+          selectedUnits === 'imperial' && styles.unitsOptionTextSelected,
+          isDark && styles.unitsOptionTextDark
+        ]}>
+          Imperial
+        </Text>
+      </Pressable>
+    </View>
+  );
+};
+
+type DoNotDisturbItemProps = {
+  title: string;
+  subtitle: string;
+  enabled: boolean;
+  onPress: () => void;
+  isDark: boolean;
+};
+
+const DoNotDisturbItem: React.FC<DoNotDisturbItemProps> = ({ title, subtitle, enabled: _enabled, onPress, isDark }) => {
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.settingItem,
+        isDark && styles.settingItemDark,
+        pressed && styles.settingItemPressed
+      ]}
+      onPress={onPress}
+    >
+      <View style={styles.settingContent}>
+        <View style={[styles.settingIcon, isDark && styles.settingIconDark]}>
+          <Ionicons name="moon-outline" size={20} color={isDark ? '#FFFFFF' : '#000000'} />
+        </View>
+        <View style={styles.settingTextContainer}>
+          <Text style={[styles.settingTitle, isDark && styles.settingTitleDark]}>
+            {title}
+          </Text>
+          <Text style={[styles.settingSubtitle, isDark && styles.settingSubtitleDark]}>
+            {subtitle}
+          </Text>
+        </View>
+        <Ionicons 
+          name="chevron-forward" 
+          size={16} 
+          color={isDark ? '#666666' : '#CCCCCC'} 
+        />
+      </View>
+    </Pressable>
+  );
+};
+
+type HealthIntegrationItemProps = {
+  title: string;
+  connected: boolean;
+  onPress: () => void;
+  isDark: boolean;
+};
+
+const HealthIntegrationItem: React.FC<HealthIntegrationItemProps> = ({ title, connected, onPress, isDark }) => {
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.settingItem,
+        isDark && styles.settingItemDark,
+        pressed && styles.settingItemPressed
+      ]}
+      onPress={onPress}
+    >
+      <View style={styles.settingContent}>
+        <View style={[styles.settingIcon, isDark && styles.settingIconDark]}>
+          <Ionicons name="fitness-outline" size={20} color={isDark ? '#FFFFFF' : '#000000'} />
+        </View>
+        <View style={styles.settingTextContainer}>
+          <Text style={[styles.settingTitle, isDark && styles.settingTitleDark]}>
+            {title}
+          </Text>
+        </View>
+        <View style={[
+          styles.statusBadge, 
+          connected ? styles.statusBadgeConnected : styles.statusBadgeDisconnected
+        ]}>
+          <Text style={[
+            styles.statusBadgeText,
+            connected ? styles.statusBadgeTextConnected : styles.statusBadgeTextDisconnected
+          ]}>
+            {connected ? 'Connected' : 'Not Connected'}
+          </Text>
+        </View>
+        <Ionicons 
+          name="chevron-forward" 
+          size={16} 
+          color={isDark ? '#666666' : '#CCCCCC'} 
+        />
+      </View>
+    </Pressable>
+  );
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -449,5 +625,73 @@ const styles = StyleSheet.create({
   },
   footerTextDark: {
     color: '#AAAAAA',
+  },
+  // Units Selector Styles
+  unitsSelector: {
+    flexDirection: 'row',
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    padding: 4,
+  },
+  unitsSelectorDark: {
+    backgroundColor: '#1A1A1A',
+  },
+  unitsOption: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  unitsOptionDark: {
+    // No additional dark styling needed - handled by selection state
+  },
+  unitsOptionSelected: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  unitsOptionPressed: {
+    opacity: 0.7,
+  },
+  unitsOptionText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666666',
+  },
+  unitsOptionTextDark: {
+    color: '#AAAAAA',
+  },
+  unitsOptionTextSelected: {
+    color: '#000000',
+  },
+  // Status Badge Styles
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginRight: 8,
+  },
+  statusBadgeConnected: {
+    backgroundColor: '#34C759',
+  },
+  statusBadgeDisconnected: {
+    backgroundColor: '#FF453A',
+  },
+  statusBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  statusBadgeTextConnected: {
+    color: '#FFFFFF',
+  },
+  statusBadgeTextDisconnected: {
+    color: '#FFFFFF',
   },
 });
