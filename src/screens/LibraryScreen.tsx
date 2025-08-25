@@ -20,6 +20,8 @@ import {
   ContentShelf,
   ContentShelfSkeleton,
 } from '../components/library/ContentShelf';
+import { ContentCard } from '../components/library/ContentCard';
+import { libraryApi } from '../services/libraryApi';
 
 type LibraryScreenProps = {
   onContentPress?: (content: Content) => void;
@@ -35,8 +37,10 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
   const { state: libraryState, actions: libraryActions } = useLibrary();
   const { state: progressState } = useUserProgress();
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [searchResults, setSearchResults] = useState<Content[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
-  const { sections, isLoading } = libraryState;
+  const { sections, isLoading, searchQuery } = libraryState;
 
   // Initial load
   useEffect(() => {
@@ -50,6 +54,32 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
 
     loadInitialData();
   }, [libraryActions]);
+
+  // Search effect
+  useEffect(() => {
+    const performSearch = async () => {
+      if (!searchQuery.trim()) {
+        setSearchResults([]);
+        setIsSearching(false);
+        return;
+      }
+
+      setIsSearching(true);
+      try {
+        const result = await libraryApi.searchContent(searchQuery, libraryState.filters);
+        setSearchResults(result.items);
+      } catch (error) {
+        console.error('Search failed:', error);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    // Debounce search
+    const timeoutId = setTimeout(performSearch, 300);
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, libraryState.filters]);
 
   // Handle pull to refresh
   const handleRefresh = useCallback(async () => {
@@ -194,6 +224,80 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
     [handleContentPress, handleSeeAllPress],
   );
 
+  // Render search result item
+  const renderSearchResult = useCallback(
+    ({ item }: { item: Content }) => (
+      <View style={styles.searchResultItem}>
+        <ContentCard
+          content={item}
+          onPress={() => handleContentPress(item)}
+        />
+      </View>
+    ),
+    [handleContentPress],
+  );
+
+  // Render search results
+  const renderSearchResults = () => {
+    if (isSearching) {
+      return (
+        <View style={styles.searchLoadingContainer}>
+          <Text style={[
+            styles.searchLoadingText,
+            { color: isDark ? '#FFFFFF' : '#000000' }
+          ]}>
+            Searching...
+          </Text>
+        </View>
+      );
+    }
+
+    if (searchQuery.trim() && searchResults.length === 0) {
+      return (
+        <View style={styles.noResultsContainer}>
+          <Text style={[
+            styles.noResultsTitle,
+            { color: isDark ? '#FFFFFF' : '#000000' }
+          ]}>
+            No results found
+          </Text>
+          <Text style={[
+            styles.noResultsMessage,
+            { color: isDark ? '#AAAAAA' : '#666666' }
+          ]}>
+            Try adjusting your search terms or filters
+          </Text>
+        </View>
+      );
+    }
+
+    if (searchResults.length > 0) {
+      return (
+        <FlatList
+          data={searchResults}
+          keyExtractor={item => item.id}
+          renderItem={renderSearchResult}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.searchResultsContainer}
+          numColumns={2}
+          columnWrapperStyle={styles.searchResultsRow}
+          ListHeaderComponent={() => (
+            <View style={styles.searchResultsHeader}>
+              <Text style={[
+                styles.searchResultsTitle,
+                { color: isDark ? '#FFFFFF' : '#000000' }
+              ]}>
+                {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} for "{searchQuery}"
+              </Text>
+            </View>
+          )}
+        />
+      );
+    }
+
+    return null;
+  };
+
   // Render loading skeleton
   const renderLoadingSkeleton = () => (
     <View>
@@ -217,6 +321,9 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
   const backgroundColor = theme.colors.background;
   const statusBarStyle = isDark ? 'light-content' : 'dark-content';
 
+  // Determine what to show
+  const showSearchResults = searchQuery.trim().length > 0;
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]}>
       <StatusBar barStyle={statusBarStyle} backgroundColor={backgroundColor} />
@@ -225,6 +332,11 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
         <View style={styles.content}>
           {renderHeader()}
           {renderLoadingSkeleton()}
+        </View>
+      ) : showSearchResults ? (
+        <View style={styles.content}>
+          {renderHeader()}
+          {renderSearchResults()}
         </View>
       ) : (
         <FlatList
@@ -345,6 +457,62 @@ const styles = StyleSheet.create({
   listContent: {
     paddingBottom: 32,
   },
+  
+  // Search results styles
+  searchResultsContainer: {
+    padding: 16,
+    paddingBottom: 32,
+  },
+  searchResultsRow: {
+    justifyContent: 'space-between',
+    paddingHorizontal: 4,
+  },
+  searchResultItem: {
+    flex: 1,
+    marginHorizontal: 4,
+    marginBottom: 16,
+  },
+  searchResultsHeader: {
+    paddingBottom: 16,
+    marginBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  searchResultsTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  searchLoadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  searchLoadingText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  noResultsContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+    paddingVertical: 40,
+  },
+  noResultsTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  noResultsMessage: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  
+  // Error styles
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
