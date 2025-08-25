@@ -4,7 +4,6 @@ import {
   Text,
   Pressable,
   StyleSheet,
-  useColorScheme,
   Image,
   ActivityIndicator,
 } from 'react-native';
@@ -19,6 +18,7 @@ import {
 import { useUserProgress } from '../../state/UserProgressContext';
 import { formatProgressText } from '../../state/UserProgressContext';
 import { premiumService } from '../../services/premiumService';
+import { useTheme } from '../../state/ThemeContext';
 import {
   AccessibilityUtils,
   useAccessibility,
@@ -37,7 +37,8 @@ export const ContentCard: React.FC<ContentCardProps> = ({
   onContinue,
   style,
 }) => {
-  const isDark = useColorScheme() === 'dark';
+  const { theme } = useTheme();
+  const isDark = theme.mode === 'dark';
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
   const { actions: progressActions } = useUserProgress();

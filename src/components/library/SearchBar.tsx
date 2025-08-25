@@ -5,7 +5,6 @@ import {
   Text,
   Pressable,
   StyleSheet,
-  useColorScheme,
   Animated,
   FlatList,
   Keyboard,
@@ -13,6 +12,7 @@ import {
 // Try with direct import
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useLibrary } from '../../state/LibraryContext';
+import { useTheme } from '../../state/ThemeContext';
 import { libraryApi } from '../../services/libraryApi';
 import {
   AccessibilityUtils,
@@ -36,7 +36,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   onBlur,
   onSearchResults,
 }) => {
-  const isDark = useColorScheme() === 'dark';
+  const { theme } = useTheme();
+  const isDark = theme.mode === 'dark';
   const { state, actions } = useLibrary();
   const [isFocused, setIsFocused] = useState(false);
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);

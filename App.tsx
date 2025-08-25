@@ -11,6 +11,7 @@ import { FavoritesProvider } from './src/state/FavoritesContext';
 import HomeScreen from './src/screens/HomeScreen';
 import SetupScreen from './src/screens/SetupScreen';
 import { TrainingScreen } from './src/screens/TrainingScreen';
+import { SimpleTrainingScreen } from './src/screens/SimpleTrainingScreen';
 import DoneScreen from './src/screens/DoneScreen';
 import { LibraryNavigator } from './src/navigation/LibraryNavigator';
 import { ProfileNavigator } from './src/navigation/ProfileNavigator';
@@ -27,7 +28,8 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import SplashScreen from './src/screens/SplashScreen';
 import OnboardingScreen from './src/screens/OnboardingScreen';
 import { OnboardingProvider, useOnboarding } from './src/state/OnboardingContext';
-import { Program, ExerciseStep, RestStep } from './src/types/program';
+import { ThemeProvider, useTheme } from './src/state/ThemeContext';
+import { Program, ExerciseStep } from './src/types/program';
 import { TRAINING_TYPES } from './src/data/trainingTypes';
 
 type RootStackParamList = {
@@ -45,7 +47,7 @@ type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
 
-// Function to create a dynamic training program based on session setup
+// Function to create a simple single-exercise program for HomeScreen training
 const createDynamicTrainingProgram = (setup: any): Program => {
   const { typeId, durationMin, difficulty } = setup;
   
@@ -56,67 +58,28 @@ const createDynamicTrainingProgram = (setup: any): Program => {
   const trainingType = TRAINING_TYPES.find(t => t.id === typeId);
   const exerciseTitle = trainingType?.title || 'Custom Exercise';
   
-  // Create a simple program with the specified duration
-  const steps: (ExerciseStep | RestStep)[] = [];
-  
-  if (totalDurationSec <= 10) {
-    // For very short durations (3-10 seconds), just do one exercise
-    steps.push({
-      id: 'quick_exercise',
-      type: 'exercise',
-      title: exerciseTitle,
-      durationSec: totalDurationSec,
-      description: `Quick ${exerciseTitle.toLowerCase()} session`,
-      icon: '⚡',
-      animationRef: typeId || 'pushups',
-      targetReps: Math.max(1, Math.floor(totalDurationSec / 2)),
-      equipment: []
-    });
-  } else {
-    // For longer durations, create a proper workout structure
-    const exerciseDuration = Math.floor(totalDurationSec * 0.8); // 80% exercise, 20% rest
-    const restDuration = totalDurationSec - exerciseDuration;
-    
-    // Split into multiple exercises if duration allows
-    const numExercises = Math.max(1, Math.floor(exerciseDuration / 30)); // 30 seconds per exercise
-    const exerciseTimePerStep = Math.floor(exerciseDuration / numExercises);
-    
-    for (let i = 0; i < numExercises; i++) {
-      steps.push({
-        id: `exercise_${i + 1}`,
-        type: 'exercise',
-        title: `${exerciseTitle} ${i + 1}`,
-        durationSec: exerciseTimePerStep,
-        description: `Round ${i + 1} of ${exerciseTitle.toLowerCase()}`,
-        icon: '💪',
-        animationRef: typeId || 'pushups',
-        targetReps: Math.max(1, Math.floor(exerciseTimePerStep / 2)),
-        equipment: []
-      });
-      
-      // Add rest between exercises (except after the last one)
-      if (i < numExercises - 1 && restDuration > 0) {
-        const restTime = Math.min(15, Math.floor(restDuration / (numExercises - 1)));
-        steps.push({
-          id: `rest_${i + 1}`,
-          type: 'rest',
-          title: 'Rest',
-          durationSec: restTime,
-          tip: 'Take a quick breather'
-        });
-      }
-    }
-  }
+  // Create a simple single-step program for HomeScreen training
+  const steps: ExerciseStep[] = [{
+    id: 'single_exercise',
+    type: 'exercise',
+    title: exerciseTitle,
+    durationSec: totalDurationSec,
+    description: `${exerciseTitle} session for ${durationMin === 0.05 ? '3 seconds' : `${durationMin} minutes`}`,
+    icon: '💪',
+    animationRef: typeId || 'pushups',
+    targetReps: Math.max(1, Math.floor(totalDurationSec / 2)),
+    equipment: []
+  }];
   
   return {
-    id: `dynamic_${typeId}_${durationMin}`,
+    id: `simple_${typeId}_${durationMin}`,
     title: `${exerciseTitle} - ${durationMin === 0.05 ? '3 sec' : `${durationMin} min`}`,
     level: difficulty,
-    description: `Custom ${exerciseTitle.toLowerCase()} workout for ${durationMin === 0.05 ? '3 seconds' : `${durationMin} minutes`}`,
-    totalActiveSec: steps.filter(s => s.type === 'exercise').reduce((sum, s) => sum + s.durationSec, 0),
-    totalRestSec: steps.filter(s => s.type === 'rest').reduce((sum, s) => sum + s.durationSec, 0),
-    stepsCount: steps.length,
-    tags: ['Custom', 'Dynamic', difficulty],
+    description: `Simple ${exerciseTitle.toLowerCase()} workout for ${durationMin === 0.05 ? '3 seconds' : `${durationMin} minutes`}`,
+    totalActiveSec: totalDurationSec,
+    totalRestSec: 0,
+    stepsCount: 1,
+    tags: ['Simple', 'Single', difficulty],
     steps,
     estimatedCalories: Math.round((durationMin === 0.05 ? 0.05 : durationMin) * 8.6),
     thumbnailUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
@@ -128,6 +91,8 @@ const createDynamicTrainingProgram = (setup: any): Program => {
 
 function HomeTabs() {
   const { setSetup } = useSession();
+  // Note: We'll import useTheme after creating the theme context
+  // For now, keeping the existing dark theme for tab bar
 
   return (
     <Tab.Navigator
@@ -200,21 +165,51 @@ function HomeTabs() {
 
 // Wrapper component to use hooks properly
 const TrainingScreenWrapper: React.FC<{ navigation: any }> = ({ navigation }) => {
-  const { setup } = useSession();
+  const { setup, setState } = useSession();
   const dynamicProgram = createDynamicTrainingProgram(setup);
   
+  // Check if this is a simple single-step program from HomeScreen
+  const isSimpleTraining = dynamicProgram.stepsCount === 1 && dynamicProgram.tags.includes('Simple');
+  
+  const handleComplete = (_results: any) => {
+    // Reset session state to prevent navigation issues
+    setState('idle');
+    navigation.navigate('done');
+  };
+  
+  const handleExit = () => {
+    // Reset session state when exiting
+    setState('idle');
+    navigation.navigate('home');
+  };
+  
+  if (isSimpleTraining) {
+    return (
+      <SimpleTrainingScreen
+        program={dynamicProgram}
+        _soundsEnabled={true}
+        vibrationsEnabled={true}
+        onComplete={handleComplete}
+        onExit={handleExit}
+      />
+    );
+  }
+  
+  // Use complex TrainingScreen for multi-step programs
   return (
     <TrainingScreen
       program={dynamicProgram}
       soundsEnabled={true}
       vibrationsEnabled={true}
-      onComplete={() => navigation.navigate('done')}
-      onExit={() => navigation.navigate('home')}
+      onComplete={handleComplete}
+      onExit={handleExit}
     />
   );
 };
 
 function AppStack() {
+  const { theme } = useTheme();
+  
   return (
     <Stack.Navigator
       initialRouteName="home"
@@ -223,7 +218,19 @@ function AppStack() {
       <Stack.Screen name="home" component={HomeTabs} />
       <Stack.Screen
         name="setup"
-        options={{ headerShown: true, title: 'Setup' }}
+        options={{
+          headerShown: true,
+          title: 'Setup',
+          headerStyle: {
+            backgroundColor: theme.colors.background,
+          },
+          headerTintColor: theme.colors.text,
+          headerTitleStyle: {
+            fontWeight: '600',
+            fontSize: 18,
+            color: theme.colors.text,
+          },
+        }}
       >
         {({ navigation }) => (
           <SetupScreen onStart={() => navigation.navigate('training')} />
@@ -321,22 +328,24 @@ function App() {
   return (
     <GestureHandlerRootView style={styles.flex1}>
       <SafeAreaProvider>
-        <PreferencesProvider>
-          <LibraryProvider>
-            <UserProgressProvider>
-              <FavoritesProvider>
-                <SessionProvider>
-                  <OnboardingProvider>
-                    <NavigationContainer>
-                      <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
-                      <RootNavigator />
-                    </NavigationContainer>
-                  </OnboardingProvider>
-                </SessionProvider>
-              </FavoritesProvider>
-            </UserProgressProvider>
-          </LibraryProvider>
-        </PreferencesProvider>
+        <ThemeProvider>
+          <PreferencesProvider>
+            <LibraryProvider>
+              <UserProgressProvider>
+                <FavoritesProvider>
+                  <SessionProvider>
+                    <OnboardingProvider>
+                      <NavigationContainer>
+                        <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
+                        <RootNavigator />
+                      </NavigationContainer>
+                    </OnboardingProvider>
+                  </SessionProvider>
+                </FavoritesProvider>
+              </UserProgressProvider>
+            </LibraryProvider>
+          </PreferencesProvider>
+        </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

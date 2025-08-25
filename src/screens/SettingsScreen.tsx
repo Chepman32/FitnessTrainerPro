@@ -7,18 +7,19 @@ import {
   SafeAreaView,
   StatusBar,
   Pressable,
-  useColorScheme,
   Switch,
   Alert,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { useTheme, ThemeMode } from '../state/ThemeContext';
 
 type SettingsScreenProps = {
   onBack?: () => void;
 };
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
-  const isDark = useColorScheme() === 'dark';
+  const { theme, themeMode, setThemeMode } = useTheme();
+  const isDark = theme.mode === 'dark';
   
   // Settings state
   const [soundsEnabled, setSoundsEnabled] = useState(true);
@@ -64,6 +65,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
             setUnitsType('metric');
             setHealthConnected(true);
             setDoNotDisturbEnabled(true);
+            setThemeMode('system');
             Alert.alert('Settings Reset', 'All settings have been reset to defaults.');
           }
         }
@@ -72,7 +74,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       
       {/* Header */}
@@ -89,6 +91,19 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Theme */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}>
+            Appearance
+          </Text>
+          
+          <ThemeSelector
+            selectedTheme={themeMode}
+            onThemeChange={setThemeMode}
+            isDark={isDark}
+          />
+        </View>
+
         {/* Units */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}>
@@ -369,6 +384,50 @@ const ActionItem: React.FC<ActionItemProps> = ({
 };
 
 // New Helper Components
+type ThemeSelectorProps = {
+  selectedTheme: ThemeMode;
+  onThemeChange: (theme: ThemeMode) => void;
+  isDark: boolean;
+};
+
+const ThemeSelector: React.FC<ThemeSelectorProps> = ({ selectedTheme, onThemeChange, isDark }) => {
+  const themes: { key: ThemeMode; label: string; icon: string }[] = [
+    { key: 'system', label: 'System', icon: 'phone-portrait-outline' },
+    { key: 'light', label: 'Light', icon: 'sunny-outline' },
+    { key: 'dark', label: 'Dark', icon: 'moon-outline' },
+  ];
+
+  return (
+    <View style={[styles.themeSelector, isDark && styles.themeSelectorDark]}>
+      {themes.map((theme) => (
+        <Pressable
+          key={theme.key}
+          style={({ pressed }) => [
+            styles.themeOption,
+            selectedTheme === theme.key && styles.themeOptionSelected,
+            isDark && styles.themeOptionDark,
+            pressed && styles.themeOptionPressed
+          ]}
+          onPress={() => onThemeChange(theme.key)}
+        >
+          <Ionicons 
+            name={theme.icon as any} 
+            size={20} 
+            color={selectedTheme === theme.key ? (isDark ? '#000000' : '#FFFFFF') : (isDark ? '#FFFFFF' : '#000000')} 
+          />
+          <Text style={[
+            styles.themeOptionText,
+            selectedTheme === theme.key && styles.themeOptionTextSelected,
+            isDark && styles.themeOptionTextDark
+          ]}>
+            {theme.label}
+          </Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+};
+
 type UnitsSelectorProps = {
   selectedUnits: 'metric' | 'imperial';
   onUnitsChange: (units: 'metric' | 'imperial') => void;
@@ -625,6 +684,54 @@ const styles = StyleSheet.create({
   },
   footerTextDark: {
     color: '#AAAAAA',
+  },
+  // Theme Selector Styles
+  themeSelector: {
+    flexDirection: 'row',
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    padding: 4,
+  },
+  themeSelectorDark: {
+    backgroundColor: '#1A1A1A',
+  },
+  themeOption: {
+    flex: 1,
+    flexDirection: 'row',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  themeOptionDark: {
+    // No additional dark styling needed - handled by selection state
+  },
+  themeOptionSelected: {
+    backgroundColor: '#5B9BFF',
+    shadowColor: '#000000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  themeOptionPressed: {
+    opacity: 0.7,
+  },
+  themeOptionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666666',
+  },
+  themeOptionTextDark: {
+    color: '#AAAAAA',
+  },
+  themeOptionTextSelected: {
+    color: '#FFFFFF',
   },
   // Units Selector Styles
   unitsSelector: {

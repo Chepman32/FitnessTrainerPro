@@ -8,6 +8,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { useSession } from '../state/SessionContext';
+import { useTheme } from '../state/ThemeContext';
 import { TRAINING_TYPES } from '../data/trainingTypes';
 
 type Props = {
@@ -26,6 +27,8 @@ const DIFFICULTIES = [
 
 export const SetupScreen: React.FC<Props> = ({ onStart }) => {
   const { setup, setSetup } = useSession();
+  const { theme } = useTheme();
+  const isDark = theme.mode === 'dark';
 
   const [useCustom, setUseCustom] = useState<boolean>(
     ![0.05, 3, 5, 10, 15, 20].includes(Number(setup.durationMin)),
@@ -34,7 +37,7 @@ export const SetupScreen: React.FC<Props> = ({ onStart }) => {
     typeof setup.durationMin === 'number' &&
       ![0.05, 3, 5, 10, 15, 20].includes(Number(setup.durationMin))
       ? setup.durationMin
-      : 25,
+      : 15,
   );
 
   // Refs for ScrollViews to control scrolling
@@ -87,13 +90,13 @@ export const SetupScreen: React.FC<Props> = ({ onStart }) => {
   }, [setup.durationMin, setup.difficulty, useCustom]);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.header}>
-        <Text style={styles.title}>{selectedTypeTitle}</Text>
+        <Text style={[styles.title, { color: theme.colors.text }]}>{selectedTypeTitle}</Text>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Duration</Text>
+        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Duration</Text>
         <ScrollView
           ref={durationScrollRef}
           horizontal
@@ -108,6 +111,7 @@ export const SetupScreen: React.FC<Props> = ({ onStart }) => {
                 key={min}
                 label={label}
                 active={active}
+                isDark={isDark}
                 onPress={() => {
                   setUseCustom(false);
                   setSetup({ durationMin: min });
@@ -118,6 +122,7 @@ export const SetupScreen: React.FC<Props> = ({ onStart }) => {
           <Chip
             label="Custom"
             active={useCustom}
+            isDark={isDark}
             onPress={() => {
               setUseCustom(true);
               setSetup({ durationMin: customMin });
@@ -131,31 +136,31 @@ export const SetupScreen: React.FC<Props> = ({ onStart }) => {
               accessibilityLabel="Decrease minutes"
               style={[styles.stepperBtn, styles.stepperGhost]}
               onPress={() => {
-                const v = Math.max(5, customMin - 5);
+                const v = Math.max(1, customMin - 1);
                 setCustomMin(v);
                 setSetup({ durationMin: v });
               }}
             >
-              <Text style={styles.stepperBtnText}>-5</Text>
+              <Text style={styles.stepperBtnText}>-1</Text>
             </Pressable>
-            <Text style={styles.stepperValue}>{customMin} min</Text>
+            <Text style={[styles.stepperValue, { color: theme.colors.text }]}>{customMin} min</Text>
             <Pressable
               accessibilityLabel="Increase minutes"
               style={[styles.stepperBtn, styles.stepperGhost]}
               onPress={() => {
-                const v = Math.min(180, customMin + 5);
+                const v = Math.min(180, customMin + 1);
                 setCustomMin(v);
                 setSetup({ durationMin: v });
               }}
             >
-              <Text style={styles.stepperBtnText}>+5</Text>
+              <Text style={styles.stepperBtnText}>+1</Text>
             </Pressable>
           </View>
         )}
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Difficulty</Text>
+        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Difficulty</Text>
         <ScrollView
           ref={difficultyScrollRef}
           horizontal
@@ -167,6 +172,7 @@ export const SetupScreen: React.FC<Props> = ({ onStart }) => {
               key={label}
               label={label}
               active={setup.difficulty === label}
+              isDark={isDark}
               onPress={() => setSetup({ difficulty: label })}
             />
           ))}
@@ -189,13 +195,21 @@ export const SetupScreen: React.FC<Props> = ({ onStart }) => {
 const Chip: React.FC<{
   label: string;
   active?: boolean;
+  isDark?: boolean;
   onPress?: () => void;
-}> = ({ label, active, onPress }) => (
+}> = ({ label, active, isDark, onPress }) => (
   <Pressable
     onPress={onPress}
-    style={[styles.chip, active ? styles.chipActive : styles.chipGhost]}
+    style={[
+      styles.chip,
+      active ? styles.chipActive : (isDark ? styles.chipGhostDark : styles.chipGhost)
+    ]}
   >
-    <Text style={[styles.chipText, active && styles.chipTextActive]}>
+    <Text style={[
+      styles.chipText,
+      active && styles.chipTextActive,
+      !active && isDark && styles.chipTextDark
+    ]}>
       {label}
     </Text>
   </Pressable>
@@ -239,6 +253,9 @@ const styles = StyleSheet.create({
   chipGhost: {
     backgroundColor: '#e5e5e5',
   },
+  chipGhostDark: {
+    backgroundColor: '#333333',
+  },
   chipActive: {
     backgroundColor: '#5B9BFF',
   },
@@ -246,6 +263,9 @@ const styles = StyleSheet.create({
     color: '#000',
     fontWeight: '600',
     fontSize: 16,
+  },
+  chipTextDark: {
+    color: '#FFFFFF',
   },
   chipTextActive: {
     color: 'white',

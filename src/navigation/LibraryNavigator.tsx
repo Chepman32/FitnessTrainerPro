@@ -5,6 +5,7 @@ import { Content, LibrarySection, Workout } from '../types/library';
 import { Program, Step } from '../types/program';
 import { LibraryScreen } from '../screens/LibraryScreen';
 import { SeeAllScreen } from '../screens/SeeAllScreen';
+import { ArticleDetailScreen } from '../screens/ArticleDetailScreen';
 
 // Navigation parameter types
 export type LibraryStackParamList = {
@@ -123,10 +124,11 @@ export const LibraryNavigator: React.FC = () => {
 
       <Stack.Screen
         name="ArticleDetail"
-        component={ArticleDetailScreen}
+        component={ArticleDetailScreenWrapper}
         options={({ route }) => ({
           title: route.params.content.title,
           headerBackTitleVisible: false,
+          headerShown: false, // Using custom header in component
         })}
       />
 
@@ -469,43 +471,27 @@ const ChallengeDetailScreen: React.FC<{ route: any; navigation: any }> = ({
   return <View><Text>Challenge Detail</Text></View>;
 };
 
-const ArticleDetailScreen: React.FC<{ route: any; navigation: any }> = ({
+// Wrapper for ArticleDetailScreen to connect with navigation
+const ArticleDetailScreenWrapper: React.FC<{ route: any; navigation: any }> = ({
   route,
-  navigation: _navigation,
+  navigation,
 }) => {
   const { content } = route.params;
-  const isDark = useColorScheme() === 'dark';
+  
+  const handleBack = () => {
+    navigation.goBack();
+  };
+  
+  const handleFavoriteToggle = (article: any, isFavorited: boolean) => {
+    console.log('Article favorite toggled:', article.title, isFavorited);
+  };
   
   return (
-    <View style={[
-      styles.screenContainer, 
-      { backgroundColor: isDark ? '#000000' : '#FFFFFF' }
-    ]}>
-      <Text style={[
-        styles.screenTitle,
-        { color: isDark ? '#FFFFFF' : '#000000' }
-      ]}>
-        {content.title}
-      </Text>
-      <Text style={[
-        styles.screenSubtitle,
-        { color: isDark ? '#CCCCCC' : '#666666' }
-      ]}>
-        Article • {content.readTimeMinutes} min read
-      </Text>
-      <Text style={[
-        styles.screenDescription,
-        { color: isDark ? '#AAAAAA' : '#888888' }
-      ]}>
-        {content.excerpt}
-      </Text>
-      <Text style={[
-        styles.screenAuthor,
-        { color: isDark ? '#5B9BFF' : '#5B9BFF' }
-      ]}>
-        By {content.author}
-      </Text>
-    </View>
+    <ArticleDetailScreen
+      article={content}
+      onBack={handleBack}
+      onFavoriteToggle={handleFavoriteToggle}
+    />
   );
 };
 

@@ -5,28 +5,12 @@ import {
   SafeAreaView,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from 'react-native';
 import { TRAINING_TYPES, TrainingType } from '../data/trainingTypes';
 import { useSession } from '../state/SessionContext';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { useTheme } from '../state/ThemeContext';
 import ExerciseIcon from '../components/ExerciseIcons';
-
-const TabButton: React.FC<{
-  icon: string;
-  label: string;
-  active?: boolean;
-}> = ({ icon, label, active }) => (
-  <Pressable style={styles.tabItem}>
-    <Ionicons
-      name={icon}
-      size={20}
-      color={active ? 'white' : 'rgba(255,255,255,0.6)'}
-    />
-    <Text style={active ? styles.tabTextActive : styles.tabText}>{label}</Text>
-  </Pressable>
-);
 
 type Props = {
   onSelect?: (t: TrainingType) => void;
@@ -34,10 +18,12 @@ type Props = {
 };
 
 export const HomeScreen: React.FC<Props> = ({ onSelect, onStart }) => {
-  const isDark = useColorScheme() === 'dark';
+  const { theme } = useTheme();
   const { setup } = useSession();
   const data = useMemo(() => TRAINING_TYPES.slice(0, 6), []);
-  const bgColor = isDark ? '#060A18' : '#0A1224';
+  
+  // Use theme-aware background color
+  const bgColor = theme.colors.background;
 
   // Get the selected training type title
   const selectedTrainingTitle = useMemo(() => {

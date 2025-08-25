@@ -5,7 +5,6 @@ import {
   FlatList,
   RefreshControl,
   StyleSheet,
-  useColorScheme,
   SafeAreaView,
   StatusBar,
   Pressable,
@@ -13,6 +12,7 @@ import {
 import { LibrarySection, Content } from '../types/library';
 import { useLibrary } from '../state/LibraryContext';
 import { useUserProgress } from '../state/UserProgressContext';
+import { useTheme } from '../state/ThemeContext';
 import { SearchBar } from '../components/library/SearchBar';
 import { FilterBar } from '../components/library/FilterBar';
 import { OfflineBanner } from '../components/library/OfflineBanner';
@@ -30,7 +30,8 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
   onContentPress,
   onSeeAllPress,
 }) => {
-  const isDark = useColorScheme() === 'dark';
+  const { theme } = useTheme();
+  const isDark = theme.mode === 'dark';
   const { state: libraryState, actions: libraryActions } = useLibrary();
   const { state: progressState } = useUserProgress();
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -213,7 +214,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
     </View>
   );
 
-  const backgroundColor = isDark ? '#000000' : '#FFFFFF';
+  const backgroundColor = theme.colors.background;
   const statusBarStyle = isDark ? 'light-content' : 'dark-content';
 
   return (
@@ -294,11 +295,12 @@ const LibraryErrorFallback: React.FC<{
   error?: Error;
   onRetry: () => void;
 }> = ({ error, onRetry }) => {
-  const isDark = useColorScheme() === 'dark';
+  const { theme } = useTheme();
+  const isDark = theme.mode === 'dark';
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: isDark ? '#000000' : '#FFFFFF' }]}
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
       <View style={styles.errorContainer}>
         <View style={styles.errorContent}>

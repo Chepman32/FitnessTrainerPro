@@ -5,12 +5,12 @@ import {
   ScrollView,
   Pressable,
   StyleSheet,
-  useColorScheme,
   ActivityIndicator,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { LibrarySection, Content } from '../../types/library';
 import { ContentCard } from './ContentCard';
+import { useTheme } from '../../state/ThemeContext';
 
 type ContentShelfProps = {
   section: LibrarySection;
@@ -31,7 +31,8 @@ export const ContentShelf: React.FC<ContentShelfProps> = ({
   loading = false,
   error = null,
 }) => {
-  const isDark = useColorScheme() === 'dark';
+  const { theme } = useTheme();
+  const isDark = theme.mode === 'dark';
 
 
   const handleRetry = useCallback(() => {
@@ -328,7 +329,8 @@ type ContentShelfSkeletonProps = {
 };
 
 export const ContentShelfSkeleton: React.FC<ContentShelfSkeletonProps> = ({ title }) => {
-  const isDark = useColorScheme() === 'dark';
+  const { theme } = useTheme();
+  const isDark = theme.mode === 'dark';
   
   return (
     <View style={styles.container}>

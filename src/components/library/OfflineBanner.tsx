@@ -4,14 +4,15 @@ import {
   Text,
   Pressable,
   StyleSheet,
-  useColorScheme,
   Animated,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { useTheme } from '../../state/ThemeContext';
 import { offlineService, OfflineStatus } from '../../services/offlineService';
 
 export const OfflineBanner: React.FC = () => {
-  const isDark = useColorScheme() === 'dark';
+  const { theme } = useTheme();
+  const isDark = theme.mode === 'dark';
   const [offlineStatus, setOfflineStatus] = useState<OfflineStatus>({
     isOnline: true,
     hasConnection: true,
@@ -139,7 +140,8 @@ export const OfflineIndicator: React.FC<{
   contentId: string;
   size?: 'small' | 'medium';
 }> = ({ contentId, size = 'small' }) => {
-  const isDark = useColorScheme() === 'dark';
+  const { theme } = useTheme();
+  const isDark = theme.mode === 'dark';
   const [isOffline, setIsOffline] = useState(false);
 
   useEffect(() => {
@@ -197,7 +199,8 @@ export const DownloadButton: React.FC<{
   onDownloadComplete,
   onDownloadError,
 }) => {
-  const isDark = useColorScheme() === 'dark';
+  const { theme } = useTheme();
+  const isDark = theme.mode === 'dark';
   const [isDownloaded, setIsDownloaded] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 

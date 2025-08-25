@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,10 @@ import {
   SafeAreaView,
   StatusBar,
   Pressable,
-  useColorScheme,
 } from 'react-native';
 import { Article } from '../types/library';
 import { useFavorites } from '../state/FavoritesContext';
+import { useTheme } from '../state/ThemeContext';
 
 type ArticleDetailScreenProps = {
   article: Article;
@@ -24,8 +24,9 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
   onBack,
   onFavoriteToggle,
 }) => {
-  const isDark = useColorScheme() === 'dark';
-  const { state: favoritesState, actions: favoritesActions } = useFavorites();
+  const { theme } = useTheme();
+  const isDark = theme.mode === 'dark';
+  const { actions: favoritesActions } = useFavorites();
   const [isToggling, setIsToggling] = useState(false);
 
   // Check if this article is favorited
@@ -164,11 +165,11 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
   const articleContent = getArticleContent(article);
 
   return (
-    <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       
       {/* Header */}
-      <View style={[styles.header, isDark && styles.headerDark]}>
+      <View style={[styles.header, { backgroundColor: theme.colors.background, borderBottomColor: isDark ? '#333333' : '#E5E5E5' }]}>
         <Pressable onPress={onBack} style={styles.backButton}>
           <Text style={[styles.backButtonText, isDark && styles.backButtonTextDark]}>
             ← Back
@@ -208,7 +209,7 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
         </ImageBackground>
 
         {/* Content */}
-        <View style={[styles.content, isDark && styles.contentDark]}>
+        <View style={[styles.content, { backgroundColor: theme.colors.background }]}>
           {/* Summary */}
           <Text style={[styles.summary, isDark && styles.summaryDark]}>
             {articleContent.summary}

@@ -5,7 +5,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  useColorScheme,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
@@ -17,6 +16,7 @@ import {
   ContentType,
 } from '../../types/library';
 import { useLibrary } from '../../state/LibraryContext';
+import { useTheme } from '../../state/ThemeContext';
 import { AccessibilityUtils, useAccessibility } from '../../utils/accessibility';
 
 type FilterChipData = {
@@ -194,7 +194,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   showExtended = false,
   onToggleExtended,
 }) => {
-  const isDark = useColorScheme() === 'dark';
+  const { theme } = useTheme();
+  const isDark = theme.mode === 'dark';
   const { state, actions } = useLibrary();
   const scrollViewRef = useRef<ScrollView>(null);
 

@@ -7,9 +7,9 @@ import {
   SafeAreaView,
   StatusBar,
   Pressable,
-  useColorScheme,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { useTheme } from '../state/ThemeContext';
 
 type ProfileScreenProps = {
   onNavigateToFavorites?: () => void;
@@ -22,10 +22,11 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   onNavigateToSettings,
   onNavigateToAbout,
 }) => {
-  const isDark = useColorScheme() === 'dark';
+  const { theme } = useTheme();
+  const isDark = theme.mode === 'dark';
 
   return (
-    <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
