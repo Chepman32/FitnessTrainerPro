@@ -8,28 +8,32 @@ import {
   SafeAreaView,
   StatusBar,
   Pressable,
-  useColorScheme,
   ActivityIndicator,
 } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useFavorites } from '../state/FavoritesContext';
+import { useTheme } from '../state/ThemeContext';
 
 type FavoritesScreenProps = {
   onArticlePress?: (article: any) => void;
+  onBack?: () => void;
 };
 
 export const FavoritesScreen: React.FC<FavoritesScreenProps> = ({
   onArticlePress,
+  onBack,
 }) => {
-  const isDark = useColorScheme() === 'dark';
+  const { theme } = useTheme();
+  const isDark = theme.mode === 'dark';
   const { state: favoritesState, actions: favoritesActions } = useFavorites();
 
   if (favoritesState.isLoading) {
     return (
-      <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={isDark ? '#FFFFFF' : '#000000'} />
-          <Text style={[styles.loadingText, isDark && styles.loadingTextDark]}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
             Loading favorites...
           </Text>
         </View>
@@ -39,17 +43,26 @@ export const FavoritesScreen: React.FC<FavoritesScreenProps> = ({
 
   if (favoritesState.favorites.length === 0) {
     return (
-      <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+        
+        {/* Header with Back Button */}
         <View style={styles.header}>
-          <Text style={[styles.title, isDark && styles.titleDark]}>Favorites</Text>
+          {onBack && (
+            <Pressable onPress={onBack} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
+            </Pressable>
+          )}
+          <Text style={[styles.title, { color: theme.colors.text }]}>Favorites</Text>
+          <View style={styles.headerSpacer} />
         </View>
+        
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyIcon}>💔</Text>
-          <Text style={[styles.emptyTitle, isDark && styles.emptyTitleDark]}>
+          <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
             No favorites yet
           </Text>
-          <Text style={[styles.emptySubtitle, isDark && styles.emptySubtitleDark]}>
+          <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}>
             Tap the heart icon on articles to save them here
           </Text>
         </View>
@@ -58,21 +71,30 @@ export const FavoritesScreen: React.FC<FavoritesScreenProps> = ({
   }
 
   return (
-    <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       
+      {/* Header with Back Button */}
       <View style={styles.header}>
-        <Text style={[styles.title, isDark && styles.titleDark]}>Favorites</Text>
-        <Text style={[styles.subtitle, isDark && styles.subtitleDark]}>
-          {favoritesState.favorites.length} saved {favoritesState.favorites.length === 1 ? 'article' : 'articles'}
-        </Text>
+        {onBack && (
+          <Pressable onPress={onBack} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
+          </Pressable>
+        )}
+        <View style={styles.headerContent}>
+          <Text style={[styles.title, { color: theme.colors.text }]}>Favorites</Text>
+          <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
+            {favoritesState.favorites.length} saved {favoritesState.favorites.length === 1 ? 'article' : 'articles'}
+          </Text>
+        </View>
+        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {favoritesState.favorites.map((favorite, index) => (
+        {favoritesState.favorites.map((favorite) => (
           <Pressable
             key={favorite.id}
-            style={[styles.favoriteCard, isDark && styles.favoriteCardDark]}
+            style={[styles.favoriteCard, { backgroundColor: theme.colors.card }]}
             onPress={() => onArticlePress?.(favorite.data)}
           >
             <ImageBackground
@@ -94,17 +116,17 @@ export const FavoritesScreen: React.FC<FavoritesScreenProps> = ({
             </ImageBackground>
             
             <View style={styles.cardContent}>
-              <Text style={[styles.cardTitle, isDark && styles.cardTitleDark]}>
+              <Text style={[styles.cardTitle, { color: theme.colors.text }]}>
                 {favorite.title}
               </Text>
-              <Text style={[styles.cardExcerpt, isDark && styles.cardExcerptDark]}>
+              <Text style={[styles.cardExcerpt, { color: theme.colors.textSecondary }]}>
                 {favorite.data.excerpt}
               </Text>
               <View style={styles.cardMeta}>
-                <Text style={[styles.cardReadTime, isDark && styles.cardReadTimeDark]}>
+                <Text style={[styles.cardReadTime, { color: theme.colors.textTertiary }]}>
                   {favorite.data.readTimeMinutes} min read
                 </Text>
-                <Text style={[styles.cardAuthor, isDark && styles.cardAuthorDark]}>
+                <Text style={[styles.cardAuthor, { color: theme.colors.textTertiary }]}>
                   By {favorite.data.author}
                 </Text>
               </View>
@@ -121,13 +143,22 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  containerDark: {
-    backgroundColor: '#000000',
-  },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 16,
+  },
+  backButton: {
+    marginRight: 16,
+    padding: 4,
+  },
+  headerContent: {
+    flex: 1,
+  },
+  headerSpacer: {
+    width: 44, // Same width as back button for balance
   },
   title: {
     fontSize: 32,
@@ -135,15 +166,9 @@ const styles = StyleSheet.create({
     color: '#000000',
     marginBottom: 4,
   },
-  titleDark: {
-    color: '#FFFFFF',
-  },
   subtitle: {
     fontSize: 16,
     color: '#666666',
-  },
-  subtitleDark: {
-    color: '#AAAAAA',
   },
   loadingContainer: {
     flex: 1,
@@ -154,9 +179,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
     color: '#666666',
-  },
-  loadingTextDark: {
-    color: '#AAAAAA',
   },
   emptyContainer: {
     flex: 1,
@@ -175,17 +197,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textAlign: 'center',
   },
-  emptyTitleDark: {
-    color: '#FFFFFF',
-  },
   emptySubtitle: {
     fontSize: 16,
     color: '#666666',
     textAlign: 'center',
     lineHeight: 22,
-  },
-  emptySubtitleDark: {
-    color: '#AAAAAA',
   },
   scrollView: {
     flex: 1,
@@ -200,11 +216,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
-  },
-  favoriteCardDark: {
-    backgroundColor: '#1A1A1A',
-    shadowColor: '#FFFFFF',
-    shadowOpacity: 0.05,
   },
   cardImage: {
     height: 160,
@@ -255,17 +266,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     lineHeight: 24,
   },
-  cardTitleDark: {
-    color: '#FFFFFF',
-  },
   cardExcerpt: {
     fontSize: 14,
     color: '#666666',
     lineHeight: 20,
     marginBottom: 12,
-  },
-  cardExcerptDark: {
-    color: '#AAAAAA',
   },
   cardMeta: {
     flexDirection: 'row',
@@ -276,14 +281,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#999999',
   },
-  cardReadTimeDark: {
-    color: '#777777',
-  },
   cardAuthor: {
     fontSize: 12,
     color: '#999999',
-  },
-  cardAuthorDark: {
-    color: '#777777',
   },
 });

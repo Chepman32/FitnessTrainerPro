@@ -1,10 +1,10 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useColorScheme } from 'react-native';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { AboutScreen } from '../screens/AboutScreen';
 import { FavoritesScreen } from '../screens/FavoritesScreen';
+import { useTheme } from '../state/ThemeContext';
 
 // Navigation parameter types
 export type ProfileStackParamList = {
@@ -20,21 +20,21 @@ export type ProfileStackParamList = {
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
 
 export const ProfileNavigator: React.FC = () => {
-  const isDark = useColorScheme() === 'dark';
+  const { theme } = useTheme();
 
   const screenOptions = {
     headerStyle: {
-      backgroundColor: isDark ? '#000000' : '#FFFFFF',
+      backgroundColor: theme.colors.background,
       shadowColor: 'transparent',
       elevation: 0,
     },
-    headerTintColor: isDark ? '#FFFFFF' : '#000000',
+    headerTintColor: theme.colors.text,
     headerTitleStyle: {
       fontWeight: '600' as const,
       fontSize: 18,
     },
     cardStyle: {
-      backgroundColor: isDark ? '#000000' : '#FFFFFF',
+      backgroundColor: theme.colors.background,
     },
   };
 
@@ -120,8 +120,15 @@ const FavoritesScreenWrapper: React.FC<{ navigation: any }> = ({ navigation }) =
     navigation.navigate('ArticleDetail', { article });
   };
 
+  const handleBack = () => {
+    navigation.goBack();
+  };
+
   return (
-    <FavoritesScreen onArticlePress={handleArticlePress} />
+    <FavoritesScreen 
+      onArticlePress={handleArticlePress} 
+      onBack={handleBack}
+    />
   );
 };
 
