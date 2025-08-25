@@ -7,11 +7,11 @@ import {
   Pressable,
   SafeAreaView,
   StatusBar,
-  useColorScheme,
   Share
 } from 'react-native';
 import { Program, formatDuration } from '../types/program';
 import { StepResult } from '../state/trainingStateMachine';
+import { useTheme } from '../state/ThemeContext';
 
 interface ProgramCompletionData {
   program: Program;
@@ -30,7 +30,8 @@ export const ProgramFinishScreen: React.FC<ProgramFinishScreenProps> = ({
   onDone,
   onRepeat
 }) => {
-  const isDark = useColorScheme() === 'dark';
+  const { theme } = useTheme();
+  const isDark = theme.mode === 'dark';
   const { program, stepResults, totalElapsedMs } = completionData;
   
   // Calculate statistics
@@ -95,32 +96,32 @@ export const ProgramFinishScreen: React.FC<ProgramFinishScreenProps> = ({
   };
   
   return (
-    <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.completionIcon}>🎉</Text>
-          <Text style={[styles.title, isDark && styles.titleDark]}>
+          <Text style={[styles.title, { color: theme.colors.text }]}>
             Workout Complete!
           </Text>
-          <Text style={[styles.programTitle, isDark && styles.programTitleDark]}>
+          <Text style={[styles.programTitle, { color: theme.colors.primary }]}>
             {program.title}
           </Text>
           
-          <Text style={[styles.performanceMessage, isDark && styles.performanceMessageDark]}>
+          <Text style={[styles.performanceMessage, { color: completionRate === 100 ? '#34C759' : '#30D158' }]}>
             {getPerformanceMessage()}
           </Text>
         </View>
         
         {/* Main Stats */}
-        <View style={[styles.mainStatsContainer, isDark && styles.mainStatsContainerDark]}>
+        <View style={[styles.mainStatsContainer, { backgroundColor: theme.colors.surface }]}>
           <View style={styles.mainStatItem}>
-            <Text style={[styles.mainStatValue, isDark && styles.mainStatValueDark]}>
+            <Text style={[styles.mainStatValue, { color: theme.colors.text }]}>
               {formatDuration(Math.round(totalElapsedMs / 1000))}
             </Text>
-            <Text style={[styles.mainStatLabel, isDark && styles.mainStatLabelDark]}>
+            <Text style={[styles.mainStatLabel, { color: theme.colors.textSecondary }]}>
               Total Time
             </Text>
           </View>
@@ -130,12 +131,11 @@ export const ProgramFinishScreen: React.FC<ProgramFinishScreenProps> = ({
           <View style={styles.mainStatItem}>
             <Text style={[
               styles.mainStatValue, 
-              isDark && styles.mainStatValueDark,
               { color: getCompletionColor() }
             ]}>
               {completionRate.toFixed(0)}%
             </Text>
-            <Text style={[styles.mainStatLabel, isDark && styles.mainStatLabelDark]}>
+            <Text style={[styles.mainStatLabel, { color: theme.colors.textSecondary }]}>
               Completion
             </Text>
           </View>
@@ -143,10 +143,10 @@ export const ProgramFinishScreen: React.FC<ProgramFinishScreenProps> = ({
           <View style={styles.mainStatDivider} />
           
           <View style={styles.mainStatItem}>
-            <Text style={[styles.mainStatValue, isDark && styles.mainStatValueDark]}>
+            <Text style={[styles.mainStatValue, { color: theme.colors.text }]}>
               {stepResults.length}
             </Text>
-            <Text style={[styles.mainStatLabel, isDark && styles.mainStatLabelDark]}>
+            <Text style={[styles.mainStatLabel, { color: theme.colors.textSecondary }]}>
               Steps
             </Text>
           </View>
@@ -154,25 +154,25 @@ export const ProgramFinishScreen: React.FC<ProgramFinishScreenProps> = ({
         
         {/* Detailed Stats */}
         <View style={styles.detailedStatsSection}>
-          <Text style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
             Workout Breakdown
           </Text>
           
-          <View style={[styles.statsGrid, isDark && styles.statsGridDark]}>
+          <View style={[styles.statsGrid, { backgroundColor: theme.colors.surface }]}>
             <View style={styles.statRow}>
               <View style={styles.statItem}>
-                <Text style={[styles.statValue, isDark && styles.statValueDark]}>
+                <Text style={[styles.statValue, { color: theme.colors.text }]}>
                   {formatDuration(totalActiveTime)}
                 </Text>
-                <Text style={[styles.statLabel, isDark && styles.statLabelDark]}>
+                <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
                   Active Time
                 </Text>
               </View>
               <View style={styles.statItem}>
-                <Text style={[styles.statValue, isDark && styles.statValueDark]}>
+                <Text style={[styles.statValue, { color: theme.colors.text }]}>
                   {formatDuration(totalRestTime)}
                 </Text>
-                <Text style={[styles.statLabel, isDark && styles.statLabelDark]}>
+                <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
                   Rest Time
                 </Text>
               </View>
@@ -180,18 +180,18 @@ export const ProgramFinishScreen: React.FC<ProgramFinishScreenProps> = ({
             
             <View style={styles.statRow}>
               <View style={styles.statItem}>
-                <Text style={[styles.statValue, isDark && styles.statValueDark]}>
+                <Text style={[styles.statValue, { color: theme.colors.text }]}>
                   {formatDuration(Math.round(averageStepTime))}
                 </Text>
-                <Text style={[styles.statLabel, isDark && styles.statLabelDark]}>
+                <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
                   Avg Step Time
                 </Text>
               </View>
               <View style={styles.statItem}>
-                <Text style={[styles.statValue, isDark && styles.statValueDark]}>
+                <Text style={[styles.statValue, { color: theme.colors.text }]}>
                   {program.estimatedCalories || '~'}
                 </Text>
-                <Text style={[styles.statLabel, isDark && styles.statLabelDark]}>
+                <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
                   Est. Calories
                 </Text>
               </View>
@@ -201,20 +201,20 @@ export const ProgramFinishScreen: React.FC<ProgramFinishScreenProps> = ({
               <View style={styles.statRow}>
                 {skippedSteps > 0 && (
                   <View style={styles.statItem}>
-                    <Text style={[styles.statValue, isDark && styles.statValueDark, { color: '#FF9500' }]}>
+                    <Text style={[styles.statValue, { color: '#FF9500' }]}>
                       {skippedSteps}
                     </Text>
-                    <Text style={[styles.statLabel, isDark && styles.statLabelDark]}>
+                    <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
                       Skipped
                     </Text>
                   </View>
                 )}
                 {extendedSteps > 0 && (
                   <View style={styles.statItem}>
-                    <Text style={[styles.statValue, isDark && styles.statValueDark, { color: '#34C759' }]}>
+                    <Text style={[styles.statValue, { color: '#34C759' }]}>
                       +{formatDuration(totalExtensionTime)}
                     </Text>
-                    <Text style={[styles.statLabel, isDark && styles.statLabelDark]}>
+                    <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
                       Extended
                     </Text>
                   </View>
@@ -226,28 +226,28 @@ export const ProgramFinishScreen: React.FC<ProgramFinishScreenProps> = ({
         
         {/* Step-by-Step Results */}
         <View style={styles.stepResultsSection}>
-          <Text style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
             Step Results
           </Text>
           
           {stepResults.map((result, index) => (
             <View 
               key={`${result.stepId}-${index}`}
-              style={[styles.stepResultItem, isDark && styles.stepResultItemDark]}
+              style={[styles.stepResultItem, { backgroundColor: theme.colors.surface }]}
             >
               <View style={styles.stepResultHeader}>
                 <Text style={styles.stepResultIcon}>
                   {result.type === 'exercise' ? '💪' : '⏸️'}
                 </Text>
                 <View style={styles.stepResultInfo}>
-                  <Text style={[styles.stepResultTitle, isDark && styles.stepResultTitleDark]}>
+                  <Text style={[styles.stepResultTitle, { color: theme.colors.text }]}>
                     Step {result.stepIndex + 1}
                   </Text>
                   <View style={styles.stepResultMeta}>
-                    <Text style={[styles.stepResultTime, isDark && styles.stepResultTimeDark]}>
+                    <Text style={[styles.stepResultTime, { color: theme.colors.primary }]}>
                       {formatDuration(result.actualElapsedSec)}
                     </Text>
-                    <Text style={[styles.stepResultPlanned, isDark && styles.stepResultPlannedDark]}>
+                    <Text style={[styles.stepResultPlanned, { color: theme.colors.textSecondary }]}>
                       / {formatDuration(result.plannedDurationSec)}
                     </Text>
                   </View>
@@ -273,32 +273,32 @@ export const ProgramFinishScreen: React.FC<ProgramFinishScreenProps> = ({
       </ScrollView>
       
       {/* Action Buttons */}
-      <View style={[styles.actionButtonsContainer, isDark && styles.actionButtonsContainerDark]}>
+      <View style={[styles.actionButtonsContainer, { backgroundColor: theme.colors.background, borderTopColor: theme.colors.border }]}>
         <View style={styles.actionButtonsRow}>
           <Pressable 
-            style={[styles.secondaryButton, isDark && styles.secondaryButtonDark]}
+            style={[styles.secondaryButton, { backgroundColor: theme.colors.surface }]}
             onPress={handleShare}
           >
-            <Text style={[styles.secondaryButtonText, isDark && styles.secondaryButtonTextDark]}>
+            <Text style={[styles.secondaryButtonText, { color: theme.colors.primary }]}>
               Share
             </Text>
           </Pressable>
           
           <Pressable 
-            style={[styles.secondaryButton, isDark && styles.secondaryButtonDark]}
+            style={[styles.secondaryButton, { backgroundColor: theme.colors.surface }]}
             onPress={onRepeat}
           >
-            <Text style={[styles.secondaryButtonText, isDark && styles.secondaryButtonTextDark]}>
+            <Text style={[styles.secondaryButtonText, { color: theme.colors.primary }]}>
               Repeat
             </Text>
           </Pressable>
         </View>
         
         <Pressable 
-          style={[styles.primaryButton, isDark && styles.primaryButtonDark]}
+          style={[styles.primaryButton, { backgroundColor: theme.colors.primary }]}
           onPress={onDone}
         >
-          <Text style={[styles.primaryButtonText, isDark && styles.primaryButtonTextDark]}>
+          <Text style={[styles.primaryButtonText, { color: theme.colors.primaryText }]}>
             Done
           </Text>
         </Pressable>
@@ -311,9 +311,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF'
-  },
-  containerDark: {
-    backgroundColor: '#000000'
   },
   scrollView: {
     flex: 1,
@@ -333,18 +330,12 @@ const styles = StyleSheet.create({
     color: '#000000',
     marginBottom: 8
   },
-  titleDark: {
-    color: '#FFFFFF'
-  },
   programTitle: {
     fontSize: 24,
     fontWeight: '600',
     color: '#007AFF',
     marginBottom: 16,
     textAlign: 'center'
-  },
-  programTitleDark: {
-    color: '#0A84FF'
   },
   performanceMessage: {
     fontSize: 18,
@@ -353,9 +344,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24
   },
-  performanceMessageDark: {
-    color: '#30D158'
-  },
   mainStatsContainer: {
     flexDirection: 'row',
     backgroundColor: '#F8F9FA',
@@ -363,9 +351,6 @@ const styles = StyleSheet.create({
     padding: 24,
     marginBottom: 32,
     alignItems: 'center'
-  },
-  mainStatsContainerDark: {
-    backgroundColor: '#1A1A1A'
   },
   mainStatItem: {
     flex: 1,
@@ -377,16 +362,10 @@ const styles = StyleSheet.create({
     color: '#000000',
     marginBottom: 4
   },
-  mainStatValueDark: {
-    color: '#FFFFFF'
-  },
   mainStatLabel: {
     fontSize: 14,
     color: '#666666',
     fontWeight: '500'
-  },
-  mainStatLabelDark: {
-    color: '#AAAAAA'
   },
   mainStatDivider: {
     width: 1,
@@ -403,16 +382,10 @@ const styles = StyleSheet.create({
     color: '#000000',
     marginBottom: 16
   },
-  sectionTitleDark: {
-    color: '#FFFFFF'
-  },
   statsGrid: {
     backgroundColor: '#F8F9FA',
     borderRadius: 12,
     padding: 20
-  },
-  statsGridDark: {
-    backgroundColor: '#1A1A1A'
   },
   statRow: {
     flexDirection: 'row',
@@ -428,17 +401,11 @@ const styles = StyleSheet.create({
     color: '#000000',
     marginBottom: 4
   },
-  statValueDark: {
-    color: '#FFFFFF'
-  },
   statLabel: {
     fontSize: 12,
     color: '#666666',
     textTransform: 'uppercase',
     fontWeight: '500'
-  },
-  statLabelDark: {
-    color: '#AAAAAA'
   },
   stepResultsSection: {
     marginBottom: 32
@@ -448,9 +415,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 12
-  },
-  stepResultItemDark: {
-    backgroundColor: '#1A1A1A'
   },
   stepResultHeader: {
     flexDirection: 'row',
@@ -469,9 +433,6 @@ const styles = StyleSheet.create({
     color: '#000000',
     marginBottom: 4
   },
-  stepResultTitleDark: {
-    color: '#FFFFFF'
-  },
   stepResultMeta: {
     flexDirection: 'row',
     alignItems: 'center'
@@ -481,16 +442,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#007AFF'
   },
-  stepResultTimeDark: {
-    color: '#0A84FF'
-  },
   stepResultPlanned: {
     fontSize: 14,
     color: '#666666',
     marginLeft: 4
-  },
-  stepResultPlannedDark: {
-    color: '#AAAAAA'
   },
   stepResultBadges: {
     flexDirection: 'row',
@@ -533,10 +488,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#E5E5E5'
   },
-  actionButtonsContainerDark: {
-    backgroundColor: '#000000',
-    borderTopColor: '#333333'
-  },
   actionButtonsRow: {
     flexDirection: 'row',
     gap: 12,
@@ -549,16 +500,10 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center'
   },
-  secondaryButtonDark: {
-    backgroundColor: '#1A1A1A'
-  },
   secondaryButtonText: {
     color: '#007AFF',
     fontSize: 16,
     fontWeight: '600'
-  },
-  secondaryButtonTextDark: {
-    color: '#0A84FF'
   },
   primaryButton: {
     backgroundColor: '#007AFF',
@@ -566,15 +511,9 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center'
   },
-  primaryButtonDark: {
-    backgroundColor: '#0A84FF'
-  },
   primaryButtonText: {
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600'
-  },
-  primaryButtonTextDark: {
-    color: '#FFFFFF'
   }
 });

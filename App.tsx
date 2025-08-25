@@ -91,16 +91,18 @@ const createDynamicTrainingProgram = (setup: any): Program => {
 
 function HomeTabs() {
   const { setSetup } = useSession();
-  // Note: We'll import useTheme after creating the theme context
-  // For now, keeping the existing dark theme for tab bar
+  const { theme } = useTheme();
 
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { backgroundColor: '#0A1224', borderTopWidth: 0 },
-        tabBarActiveTintColor: 'white',
-        tabBarInactiveTintColor: 'rgba(255,255,255,0.6)',
+        tabBarStyle: { 
+          backgroundColor: theme.colors.tabBarBackground, 
+          borderTopWidth: 0 
+        },
+        tabBarActiveTintColor: theme.colors.tabBarActive,
+        tabBarInactiveTintColor: theme.colors.tabBarInactive,
       }}
     >
       <Tab.Screen

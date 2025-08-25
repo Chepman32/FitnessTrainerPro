@@ -7,11 +7,11 @@ import {
   Pressable,
   SafeAreaView,
   StatusBar,
-  useColorScheme,
   ImageBackground
 } from 'react-native';
 import { SAMPLE_PROGRAMS } from '../data/samplePrograms';
 import { formatDuration, getTotalDuration } from '../types/program';
+import { useTheme } from '../state/ThemeContext';
 
 interface ProgramsTestScreenProps {
   onProgramSelect: (program: any) => void;
@@ -22,7 +22,8 @@ export const ProgramsTestScreen: React.FC<ProgramsTestScreenProps> = ({
   onProgramSelect,
   onBack
 }) => {
-  const isDark = useColorScheme() === 'dark';
+  const { theme } = useTheme();
+  const isDark = theme.mode === 'dark';
 
   const getLevelColor = (level: string) => {
     switch (level) {
@@ -34,31 +35,31 @@ export const ProgramsTestScreen: React.FC<ProgramsTestScreenProps> = ({
   };
 
   return (
-    <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={onBack} style={styles.backButton}>
-          <Text style={[styles.backButtonText, isDark && styles.backButtonTextDark]}>
+          <Text style={[styles.backButtonText, { color: theme.colors.primary }]}>
             ← Back
           </Text>
         </Pressable>
-        <Text style={[styles.headerTitle, isDark && styles.headerTitleDark]}>
+        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
           Complex Training Programs
         </Text>
         <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <Text style={[styles.subtitle, isDark && styles.subtitleDark]}>
+        <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
           Test the new Complex Training Programs with timed exercises, animations, and step-by-step guidance.
         </Text>
 
         {SAMPLE_PROGRAMS.map((program) => (
           <Pressable
             key={program.id}
-            style={[styles.programCard, isDark && styles.programCardDark]}
+            style={[styles.programCard, { backgroundColor: theme.colors.card }]}
             onPress={() => onProgramSelect(program)}
           >
             <ImageBackground
@@ -83,38 +84,38 @@ export const ProgramsTestScreen: React.FC<ProgramsTestScreenProps> = ({
             </ImageBackground>
 
             <View style={styles.programContent}>
-              <Text style={[styles.programTitle, isDark && styles.programTitleDark]}>
+              <Text style={[styles.programTitle, { color: theme.colors.text }]}>
                 {program.title}
               </Text>
               
-              <Text style={[styles.programDescription, isDark && styles.programDescriptionDark]}>
+              <Text style={[styles.programDescription, { color: theme.colors.textSecondary }]}>
                 {program.description}
               </Text>
 
               <View style={styles.programStats}>
                 <View style={styles.statItem}>
-                  <Text style={[styles.statValue, isDark && styles.statValueDark]}>
+                  <Text style={[styles.statValue, { color: theme.colors.text }]}>
                     {formatDuration(getTotalDuration(program))}
                   </Text>
-                  <Text style={[styles.statLabel, isDark && styles.statLabelDark]}>
+                  <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
                     Total Duration
                   </Text>
                 </View>
                 
                 <View style={styles.statItem}>
-                  <Text style={[styles.statValue, isDark && styles.statValueDark]}>
+                  <Text style={[styles.statValue, { color: theme.colors.text }]}>
                     {program.stepsCount}
                   </Text>
-                  <Text style={[styles.statLabel, isDark && styles.statLabelDark]}>
+                  <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
                     Steps
                   </Text>
                 </View>
                 
                 <View style={styles.statItem}>
-                  <Text style={[styles.statValue, isDark && styles.statValueDark]}>
+                  <Text style={[styles.statValue, { color: theme.colors.text }]}>
                     {program.estimatedCalories}
                   </Text>
-                  <Text style={[styles.statLabel, isDark && styles.statLabelDark]}>
+                  <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
                     Calories
                   </Text>
                 </View>
@@ -122,24 +123,24 @@ export const ProgramsTestScreen: React.FC<ProgramsTestScreenProps> = ({
 
               <View style={styles.tagsContainer}>
                 {program.tags.slice(0, 3).map((tag, index) => (
-                  <View key={index} style={[styles.tag, isDark && styles.tagDark]}>
-                    <Text style={[styles.tagText, isDark && styles.tagTextDark]}>
+                  <View key={index} style={[styles.tag, { backgroundColor: theme.colors.backgroundTertiary }]}>
+                    <Text style={[styles.tagText, { color: theme.colors.textSecondary }]}>
                       {tag}
                     </Text>
                   </View>
                 ))}
                 {program.tags.length > 3 && (
-                  <Text style={[styles.moreTagsText, isDark && styles.moreTagsTextDark]}>
+                  <Text style={[styles.moreTagsText, { color: theme.colors.textTertiary }]}>
                     +{program.tags.length - 3} more
                   </Text>
                 )}
               </View>
 
               <Pressable 
-                style={[styles.startButton, isDark && styles.startButtonDark]}
+                style={[styles.startButton, { backgroundColor: theme.colors.primary }]}
                 onPress={() => onProgramSelect(program)}
               >
-                <Text style={[styles.startButtonText, isDark && styles.startButtonTextDark]}>
+                <Text style={[styles.startButtonText, { color: theme.colors.primaryText }]}>
                   Start Program →
                 </Text>
               </Pressable>
@@ -158,9 +159,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF'
   },
-  containerDark: {
-    backgroundColor: '#000000'
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -175,18 +173,12 @@ const styles = StyleSheet.create({
     color: '#007AFF',
     fontWeight: '500'
   },
-  backButtonTextDark: {
-    color: '#0A84FF'
-  },
   headerTitle: {
     flex: 1,
     fontSize: 20,
     fontWeight: '600',
     color: '#000000',
     textAlign: 'center'
-  },
-  headerTitleDark: {
-    color: '#FFFFFF'
   },
   headerSpacer: {
     width: 60
@@ -202,9 +194,6 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     lineHeight: 22
   },
-  subtitleDark: {
-    color: '#AAAAAA'
-  },
   programCard: {
     backgroundColor: '#F8F9FA',
     borderRadius: 16,
@@ -215,9 +204,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3
-  },
-  programCardDark: {
-    backgroundColor: '#1A1A1A'
   },
   programImage: {
     height: 120,
@@ -263,17 +249,11 @@ const styles = StyleSheet.create({
     color: '#000000',
     marginBottom: 8
   },
-  programTitleDark: {
-    color: '#FFFFFF'
-  },
   programDescription: {
     fontSize: 14,
     color: '#666666',
     lineHeight: 20,
     marginBottom: 16
-  },
-  programDescriptionDark: {
-    color: '#AAAAAA'
   },
   programStats: {
     flexDirection: 'row',
@@ -289,17 +269,11 @@ const styles = StyleSheet.create({
     color: '#000000',
     marginBottom: 4
   },
-  statValueDark: {
-    color: '#FFFFFF'
-  },
   statLabel: {
     fontSize: 12,
     color: '#666666',
     textTransform: 'uppercase',
     fontWeight: '500'
-  },
-  statLabelDark: {
-    color: '#AAAAAA'
   },
   tagsContainer: {
     flexDirection: 'row',
@@ -314,24 +288,15 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12
   },
-  tagDark: {
-    backgroundColor: '#333333'
-  },
   tagText: {
     fontSize: 12,
     color: '#666666',
     fontWeight: '500'
   },
-  tagTextDark: {
-    color: '#CCCCCC'
-  },
   moreTagsText: {
     fontSize: 12,
     color: '#999999',
     fontStyle: 'italic'
-  },
-  moreTagsTextDark: {
-    color: '#777777'
   },
   startButton: {
     backgroundColor: '#007AFF',
@@ -339,16 +304,10 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center'
   },
-  startButtonDark: {
-    backgroundColor: '#0A84FF'
-  },
   startButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600'
-  },
-  startButtonTextDark: {
-    color: '#FFFFFF'
   },
   bottomPadding: {
     height: 40

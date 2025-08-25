@@ -7,11 +7,11 @@ import {
   Pressable,
   SafeAreaView,
   StatusBar,
-  useColorScheme,
   Switch,
   Alert
 } from 'react-native';
 import { Program, validateProgram, formatDuration, getTotalDuration } from '../types/program';
+import { useTheme } from '../state/ThemeContext';
 
 interface ProgramStartScreenProps {
   program: Program;
@@ -24,7 +24,8 @@ export const ProgramStartScreen: React.FC<ProgramStartScreenProps> = ({
   onStart,
   onBack
 }) => {
-  const isDark = useColorScheme() === 'dark';
+  const { theme } = useTheme();
+  const isDark = theme.mode === 'dark';
   const [soundsEnabled, setSoundsEnabled] = useState(true);
   const [vibrationsEnabled, setVibrationsEnabled] = useState(true);
   
@@ -62,13 +63,13 @@ export const ProgramStartScreen: React.FC<ProgramStartScreenProps> = ({
   const hasLongSteps = program.steps.some(step => step.durationSec >= 7200); // 2+ hours
   
   return (
-    <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={onBack} style={styles.backButton}>
-          <Text style={[styles.backButtonText, isDark && styles.backButtonTextDark]}>
+          <Text style={[styles.backButtonText, { color: theme.colors.primary }]}>
             ← Back
           </Text>
         </Pressable>
@@ -77,7 +78,7 @@ export const ProgramStartScreen: React.FC<ProgramStartScreenProps> = ({
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Program Header */}
         <View style={styles.programHeader}>
-          <Text style={[styles.programTitle, isDark && styles.programTitleDark]}>
+          <Text style={[styles.programTitle, { color: theme.colors.text }]}>
             {program.title}
           </Text>
           
@@ -85,50 +86,50 @@ export const ProgramStartScreen: React.FC<ProgramStartScreenProps> = ({
             <View style={[styles.levelBadge, { backgroundColor: getLevelColor(program.level) }]}>
               <Text style={styles.levelText}>{program.level}</Text>
             </View>
-            <Text style={[styles.duration, isDark && styles.durationDark]}>
+            <Text style={[styles.duration, { color: theme.colors.textSecondary }]}>
               {formatDuration(totalDuration)}
             </Text>
           </View>
           
           {program.description && (
-            <Text style={[styles.programDescription, isDark && styles.programDescriptionDark]}>
+            <Text style={[styles.programDescription, { color: theme.colors.textSecondary }]}>
               {program.description}
             </Text>
           )}
         </View>
         
         {/* Program Stats */}
-        <View style={[styles.statsContainer, isDark && styles.statsContainerDark]}>
+        <View style={[styles.statsContainer, { backgroundColor: theme.colors.surface }]}>
           <View style={styles.statItem}>
-            <Text style={[styles.statValue, isDark && styles.statValueDark]}>
+            <Text style={[styles.statValue, { color: theme.colors.text }]}>
               {program.stepsCount}
             </Text>
-            <Text style={[styles.statLabel, isDark && styles.statLabelDark]}>
+            <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
               Steps
             </Text>
           </View>
           <View style={styles.statItem}>
-            <Text style={[styles.statValue, isDark && styles.statValueDark]}>
+            <Text style={[styles.statValue, { color: theme.colors.text }]}>
               {formatDuration(program.totalActiveSec)}
             </Text>
-            <Text style={[styles.statLabel, isDark && styles.statLabelDark]}>
+            <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
               Active
             </Text>
           </View>
           <View style={styles.statItem}>
-            <Text style={[styles.statValue, isDark && styles.statValueDark]}>
+            <Text style={[styles.statValue, { color: theme.colors.text }]}>
               {formatDuration(program.totalRestSec)}
             </Text>
-            <Text style={[styles.statLabel, isDark && styles.statLabelDark]}>
+            <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
               Rest
             </Text>
           </View>
           {program.estimatedCalories && (
             <View style={styles.statItem}>
-              <Text style={[styles.statValue, isDark && styles.statValueDark]}>
+              <Text style={[styles.statValue, { color: theme.colors.text }]}>
                 {program.estimatedCalories}
               </Text>
-              <Text style={[styles.statLabel, isDark && styles.statLabelDark]}>
+              <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
                 Cal
               </Text>
             </View>
@@ -139,8 +140,8 @@ export const ProgramStartScreen: React.FC<ProgramStartScreenProps> = ({
         {program.tags.length > 0 && (
           <View style={styles.tagsContainer}>
             {program.tags.map((tag, index) => (
-              <View key={index} style={[styles.tag, isDark && styles.tagDark]}>
-                <Text style={[styles.tagText, isDark && styles.tagTextDark]}>
+              <View key={index} style={[styles.tag, { backgroundColor: theme.colors.backgroundTertiary }]}>
+                <Text style={[styles.tagText, { color: theme.colors.textSecondary }]}>
                   {tag}
                 </Text>
               </View>
@@ -150,9 +151,9 @@ export const ProgramStartScreen: React.FC<ProgramStartScreenProps> = ({
         
         {/* Warning for long steps */}
         {hasLongSteps && (
-          <View style={[styles.warningContainer, isDark && styles.warningContainerDark]}>
+          <View style={[styles.warningContainer, { backgroundColor: isDark ? '#2D2A1A' : '#FFF3CD' }]}>
             <Text style={styles.warningIcon}>⚠️</Text>
-            <Text style={[styles.warningText, isDark && styles.warningTextDark]}>
+            <Text style={[styles.warningText, { color: isDark ? '#FFC107' : '#856404' }]}>
               This program contains long duration steps. Consider device battery usage.
             </Text>
           </View>
@@ -160,14 +161,14 @@ export const ProgramStartScreen: React.FC<ProgramStartScreenProps> = ({
         
         {/* Validation Errors */}
         {!canStart && (
-          <View style={[styles.errorContainer, isDark && styles.errorContainerDark]}>
+          <View style={[styles.errorContainer, { backgroundColor: isDark ? '#2D1B1E' : '#F8D7DA' }]}>
             <Text style={styles.errorIcon}>❌</Text>
             <View style={styles.errorTextContainer}>
-              <Text style={[styles.errorTitle, isDark && styles.errorTitleDark]}>
+              <Text style={[styles.errorTitle, { color: isDark ? '#F5C6CB' : '#721C24' }]}>
                 Program Issues:
               </Text>
               {validation.errors.map((error, index) => (
-                <Text key={index} style={[styles.errorText, isDark && styles.errorTextDark]}>
+                <Text key={index} style={[styles.errorText, { color: isDark ? '#F5C6CB' : '#721C24' }]}>
                   • {error}
                 </Text>
               ))}
@@ -177,7 +178,7 @@ export const ProgramStartScreen: React.FC<ProgramStartScreenProps> = ({
         
         {/* Steps List */}
         <View style={styles.stepsSection}>
-          <Text style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
             Workout Steps
           </Text>
           
@@ -186,7 +187,7 @@ export const ProgramStartScreen: React.FC<ProgramStartScreenProps> = ({
               key={step.id} 
               style={[
                 styles.stepItem, 
-                isDark && styles.stepItemDark,
+                { backgroundColor: theme.colors.surface },
                 step.durationSec <= 0 && styles.stepItemError
               ]}
             >
@@ -196,28 +197,28 @@ export const ProgramStartScreen: React.FC<ProgramStartScreenProps> = ({
                     {step.type === 'exercise' && 'icon' in step && step.icon ? step.icon : getStepIcon(step.type)}
                   </Text>
                   <View style={styles.stepInfo}>
-                    <Text style={[styles.stepTitle, isDark && styles.stepTitleDark]}>
+                    <Text style={[styles.stepTitle, { color: theme.colors.text }]}>
                       {step.title}
                     </Text>
                     {step.type === 'exercise' && 'description' in step && step.description && (
-                      <Text style={[styles.stepDescription, isDark && styles.stepDescriptionDark]}>
+                      <Text style={[styles.stepDescription, { color: theme.colors.textSecondary }]}>
                         {step.description}
                       </Text>
                     )}
                     {step.type === 'rest' && 'tip' in step && step.tip && (
-                      <Text style={[styles.stepDescription, isDark && styles.stepDescriptionDark]}>
+                      <Text style={[styles.stepDescription, { color: theme.colors.textSecondary }]}>
                         💡 {step.tip}
                       </Text>
                     )}
                   </View>
                 </View>
                 <View style={styles.stepRightContent}>
-                  <Text style={[styles.stepOrder, isDark && styles.stepOrderDark]}>
+                  <Text style={[styles.stepOrder, { color: theme.colors.textTertiary }]}>
                     {index + 1}
                   </Text>
                   <Text style={[
                     styles.stepDuration, 
-                    isDark && styles.stepDurationDark,
+                    { color: theme.colors.primary },
                     step.durationSec <= 0 && styles.stepDurationError
                   ]}>
                     {formatDuration(step.durationSec)}
@@ -230,12 +231,12 @@ export const ProgramStartScreen: React.FC<ProgramStartScreenProps> = ({
         
         {/* Settings */}
         <View style={styles.settingsSection}>
-          <Text style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
             Settings
           </Text>
           
-          <View style={[styles.settingItem, isDark && styles.settingItemDark]}>
-            <Text style={[styles.settingLabel, isDark && styles.settingLabelDark]}>
+          <View style={[styles.settingItem, { backgroundColor: theme.colors.surface }]}>
+            <Text style={[styles.settingLabel, { color: theme.colors.text }]}>
               Sound Effects
             </Text>
             <Switch
@@ -246,8 +247,8 @@ export const ProgramStartScreen: React.FC<ProgramStartScreenProps> = ({
             />
           </View>
           
-          <View style={[styles.settingItem, isDark && styles.settingItemDark]}>
-            <Text style={[styles.settingLabel, isDark && styles.settingLabelDark]}>
+          <View style={[styles.settingItem, { backgroundColor: theme.colors.surface }]}>
+            <Text style={[styles.settingLabel, { color: theme.colors.text }]}>
               Vibrations
             </Text>
             <Switch
@@ -263,12 +264,12 @@ export const ProgramStartScreen: React.FC<ProgramStartScreenProps> = ({
       </ScrollView>
       
       {/* Fixed Start Button */}
-      <View style={[styles.startButtonContainer, isDark && styles.startButtonContainerDark]}>
+      <View style={[styles.startButtonContainer, { backgroundColor: theme.colors.background, borderTopColor: theme.colors.border }]}>
         <Pressable
           style={[
             styles.startButton,
             !canStart && styles.startButtonDisabled,
-            isDark && styles.startButtonDark
+            { backgroundColor: canStart ? theme.colors.primary : '#CCCCCC' }
           ]}
           onPress={handleStart}
           disabled={!canStart}
@@ -276,7 +277,7 @@ export const ProgramStartScreen: React.FC<ProgramStartScreenProps> = ({
           <Text style={[
             styles.startButtonText,
             !canStart && styles.startButtonTextDisabled,
-            isDark && styles.startButtonTextDark
+            { color: canStart ? theme.colors.primaryText : '#666666' }
           ]}>
             {canStart ? 'Start Workout' : 'Cannot Start'}
           </Text>
@@ -291,9 +292,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF'
   },
-  containerDark: {
-    backgroundColor: '#000000'
-  },
   header: {
     paddingHorizontal: 20,
     paddingVertical: 12
@@ -305,9 +303,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#007AFF',
     fontWeight: '500'
-  },
-  backButtonTextDark: {
-    color: '#0A84FF'
   },
   scrollView: {
     flex: 1,
@@ -321,9 +316,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#000000',
     marginBottom: 12
-  },
-  programTitleDark: {
-    color: '#FFFFFF'
   },
   programMeta: {
     flexDirection: 'row',
@@ -346,16 +338,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#666666'
   },
-  durationDark: {
-    color: '#AAAAAA'
-  },
   programDescription: {
     fontSize: 16,
     lineHeight: 22,
     color: '#666666'
-  },
-  programDescriptionDark: {
-    color: '#AAAAAA'
   },
   statsContainer: {
     flexDirection: 'row',
@@ -363,9 +349,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 20,
     marginBottom: 20
-  },
-  statsContainerDark: {
-    backgroundColor: '#1A1A1A'
   },
   statItem: {
     flex: 1,
@@ -377,17 +360,11 @@ const styles = StyleSheet.create({
     color: '#000000',
     marginBottom: 4
   },
-  statValueDark: {
-    color: '#FFFFFF'
-  },
   statLabel: {
     fontSize: 12,
     color: '#666666',
     textTransform: 'uppercase',
     fontWeight: '500'
-  },
-  statLabelDark: {
-    color: '#AAAAAA'
   },
   tagsContainer: {
     flexDirection: 'row',
@@ -401,16 +378,10 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 16
   },
-  tagDark: {
-    backgroundColor: '#333333'
-  },
   tagText: {
     fontSize: 14,
     color: '#666666',
     fontWeight: '500'
-  },
-  tagTextDark: {
-    color: '#CCCCCC'
   },
   warningContainer: {
     flexDirection: 'row',
@@ -419,9 +390,6 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 20,
     alignItems: 'flex-start'
-  },
-  warningContainerDark: {
-    backgroundColor: '#2D2A1A'
   },
   warningIcon: {
     fontSize: 20,
@@ -433,9 +401,6 @@ const styles = StyleSheet.create({
     color: '#856404',
     lineHeight: 20
   },
-  warningTextDark: {
-    color: '#FFC107'
-  },
   errorContainer: {
     flexDirection: 'row',
     backgroundColor: '#F8D7DA',
@@ -443,9 +408,6 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 20,
     alignItems: 'flex-start'
-  },
-  errorContainerDark: {
-    backgroundColor: '#2D1B1E'
   },
   errorIcon: {
     fontSize: 20,
@@ -460,17 +422,11 @@ const styles = StyleSheet.create({
     color: '#721C24',
     marginBottom: 8
   },
-  errorTitleDark: {
-    color: '#F5C6CB'
-  },
   errorText: {
     fontSize: 14,
     color: '#721C24',
     lineHeight: 20,
     marginBottom: 4
-  },
-  errorTextDark: {
-    color: '#F5C6CB'
   },
   stepsSection: {
     marginBottom: 32
@@ -481,17 +437,11 @@ const styles = StyleSheet.create({
     color: '#000000',
     marginBottom: 16
   },
-  sectionTitleDark: {
-    color: '#FFFFFF'
-  },
   stepItem: {
     backgroundColor: '#F8F9FA',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12
-  },
-  stepItemDark: {
-    backgroundColor: '#1A1A1A'
   },
   stepItemError: {
     backgroundColor: '#F8D7DA',
@@ -520,16 +470,10 @@ const styles = StyleSheet.create({
     color: '#000000',
     marginBottom: 4
   },
-  stepTitleDark: {
-    color: '#FFFFFF'
-  },
   stepDescription: {
     fontSize: 14,
     color: '#666666',
     lineHeight: 18
-  },
-  stepDescriptionDark: {
-    color: '#AAAAAA'
   },
   stepRightContent: {
     alignItems: 'flex-end'
@@ -539,16 +483,10 @@ const styles = StyleSheet.create({
     color: '#999999',
     marginBottom: 4
   },
-  stepOrderDark: {
-    color: '#777777'
-  },
   stepDuration: {
     fontSize: 16,
     fontWeight: '600',
     color: '#007AFF'
-  },
-  stepDurationDark: {
-    color: '#0A84FF'
   },
   stepDurationError: {
     color: '#DC3545'
@@ -565,16 +503,10 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12
   },
-  settingItemDark: {
-    backgroundColor: '#1A1A1A'
-  },
   settingLabel: {
     fontSize: 16,
     fontWeight: '500',
     color: '#000000'
-  },
-  settingLabelDark: {
-    color: '#FFFFFF'
   },
   bottomPadding: {
     height: 100
@@ -591,18 +523,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#E5E5E5'
   },
-  startButtonContainerDark: {
-    backgroundColor: '#000000',
-    borderTopColor: '#333333'
-  },
   startButton: {
     backgroundColor: '#007AFF',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center'
-  },
-  startButtonDark: {
-    backgroundColor: '#0A84FF'
   },
   startButtonDisabled: {
     backgroundColor: '#CCCCCC'
@@ -611,9 +536,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600'
-  },
-  startButtonTextDark: {
-    color: '#FFFFFF'
   },
   startButtonTextDisabled: {
     color: '#666666'
