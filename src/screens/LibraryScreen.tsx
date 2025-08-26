@@ -281,6 +281,8 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
           contentContainerStyle={styles.searchResultsContainer}
           numColumns={2}
           columnWrapperStyle={styles.searchResultsRow}
+          keyboardShouldPersistTaps="always"
+          keyboardDismissMode="none"
           ListHeaderComponent={() => (
             <View style={styles.searchResultsHeader}>
               <Text style={[
@@ -309,11 +311,17 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
     </View>
   );
 
-  // Render header components
-  const renderHeader = () => (
+  // Always-on top header (keeps SearchBar mounted)
+  const renderTopHeader = () => (
     <View>
       <OfflineBanner />
       <SearchBar />
+    </View>
+  );
+
+  // List header (below the always-on header)
+  const renderListHeader = () => (
+    <View>
       <FilterBar />
     </View>
   );
@@ -328,22 +336,18 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
     <SafeAreaView style={[styles.container, { backgroundColor }]}>
       <StatusBar barStyle={statusBarStyle} backgroundColor={backgroundColor} />
 
+      {renderTopHeader()}
+
       {isInitialLoad ? (
-        <View style={styles.content}>
-          {renderHeader()}
-          {renderLoadingSkeleton()}
-        </View>
+        <View style={styles.content}>{renderLoadingSkeleton()}</View>
       ) : showSearchResults ? (
-        <View style={styles.content}>
-          {renderHeader()}
-          {renderSearchResults()}
-        </View>
+        <View style={styles.content}>{renderSearchResults()}</View>
       ) : (
         <FlatList
           data={sectionsWithContinue}
           keyExtractor={item => item.id}
           renderItem={renderSection}
-          ListHeaderComponent={renderHeader}
+          ListHeaderComponent={renderListHeader}
           refreshControl={
             <RefreshControl
               refreshing={isLoading && !isInitialLoad}
@@ -358,6 +362,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
           maxToRenderPerBatch={3}
           windowSize={5}
           initialNumToRender={3}
+          keyboardShouldPersistTaps="always"
           getItemLayout={(data, index) => ({
             length: 300, // Approximate height of each section
             offset: 300 * index,

@@ -29,8 +29,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
   const inputRef = useRef<TextInput>(null);
 
-
-
   const handleFocus = () => {
     setIsFocused(true);
     onFocus?.();
@@ -51,22 +49,15 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     Keyboard.dismiss();
   };
 
-
-
   return (
     <View style={styles.container}>
       {/* Search Input */}
-      <Pressable
+      <View
         style={[
           styles.searchContainer,
           isDark ? styles.searchContainerDark : styles.searchContainerLight,
           isFocused && styles.searchContainerFocused,
         ]}
-        onPress={() => {
-          inputRef.current?.focus();
-        }}
-        accessibilityRole="button"
-        accessibilityLabel="Search input"
       >
         <Text style={[
           styles.searchIconText, 
@@ -89,6 +80,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           autoCapitalize="none"
           autoCorrect={false}
           clearButtonMode="never" // We'll use custom clear button
+          blurOnSubmit={false}
         />
 
         {state.searchQuery.length > 0 && (
@@ -104,7 +96,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             ]}>✕</Text>
           </Pressable>
         )}
-      </Pressable>
+      </View>
     </View>
   );
 };
@@ -130,7 +122,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0, 0, 0, 0.1)',
   },
   searchContainerDark: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: '#2A2A2A',
     borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   searchContainerFocused: {
