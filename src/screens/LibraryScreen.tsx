@@ -231,6 +231,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
         <ContentCard
           content={item}
           onPress={() => handleContentPress(item)}
+          style={styles.searchResultCard}
         />
       </View>
     ),
@@ -474,8 +475,14 @@ const styles = StyleSheet.create({
   },
   searchResultItem: {
     flex: 1,
+    flexBasis: '48%',
+    maxWidth: '48%',
     marginHorizontal: 4,
     marginBottom: 16,
+  },
+  searchResultCard: {
+    width: '100%',
+    marginRight: 0,
   },
   searchResultsHeader: {
     paddingBottom: 16,
