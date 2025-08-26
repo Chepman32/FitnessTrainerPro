@@ -80,7 +80,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           autoCapitalize="none"
           autoCorrect={false}
           clearButtonMode="never" // We'll use custom clear button
-          blurOnSubmit={false}
         />
 
         {state.searchQuery.length > 0 && (
