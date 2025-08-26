@@ -12,6 +12,7 @@ import {
 import { SAMPLE_PROGRAMS } from '../data/samplePrograms';
 import { formatDuration, getTotalDuration } from '../types/program';
 import { useTheme } from '../state/ThemeContext';
+import { BackButton } from '../components/BackButton';
 
 interface ProgramsTestScreenProps {
   onProgramSelect: (program: any) => void;
@@ -40,11 +41,7 @@ export const ProgramsTestScreen: React.FC<ProgramsTestScreenProps> = ({
       
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={onBack} style={styles.backButton}>
-          <Text style={[styles.backButtonText, { color: theme.colors.primary }]}>
-            ← Back
-          </Text>
-        </Pressable>
+        <BackButton onPress={onBack} />
         <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
           Complex Training Programs
         </Text>

@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { BackButton } from '../../components/BackButton';
 import { Content } from '../../types/library';
 import { useLibrary } from '../../state/LibraryContext';
 import { libraryApi } from '../../services/libraryApi';
@@ -113,18 +114,7 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
   const renderHeader = () => (
     <View>
       <View style={styles.headerContainer}>
-        <Pressable
-          style={styles.backButton}
-          onPress={onBack}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Ionicons
-            name="arrow-back"
-            size={24}
-            color={isDark ? '#FFF' : '#000'}
-          />
-        </Pressable>
+        <BackButton onPress={onBack || (() => {})} />
         <View style={styles.searchContainer}>
           <SearchBar />
         </View>

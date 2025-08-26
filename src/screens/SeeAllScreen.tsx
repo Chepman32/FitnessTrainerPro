@@ -13,6 +13,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { BackButton } from '../components/BackButton';
 import { RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LibraryStackParamList } from '../navigation/LibraryNavigator';
@@ -255,18 +256,7 @@ export const SeeAllScreen: React.FC<SeeAllScreenProps> = ({ route, navigation })
       {/* Header Controls */}
       <View style={[styles.header, { backgroundColor }]}>
         {/* Back Button */}
-        <Pressable 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Ionicons 
-            name="arrow-back" 
-            size={24} 
-            color={textColor} 
-          />
-        </Pressable>
+        <BackButton onPress={() => navigation.goBack()} />
         
         <Text style={[styles.headerTitle, { color: textColor }]}>
           {section.title} ({processedContent.length})

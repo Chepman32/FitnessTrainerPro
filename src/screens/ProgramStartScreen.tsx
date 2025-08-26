@@ -11,6 +11,7 @@ import {
   Alert
 } from 'react-native';
 import { Program, validateProgram, formatDuration, getTotalDuration } from '../types/program';
+import { BackButton } from '../components/BackButton';
 import { useTheme } from '../state/ThemeContext';
 
 interface ProgramStartScreenProps {
@@ -68,11 +69,7 @@ export const ProgramStartScreen: React.FC<ProgramStartScreenProps> = ({
       
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={onBack} style={styles.backButton}>
-          <Text style={[styles.backButtonText, { color: theme.colors.primary }]}>
-            ← Back
-          </Text>
-        </Pressable>
+        <BackButton onPress={onBack} />
       </View>
       
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>

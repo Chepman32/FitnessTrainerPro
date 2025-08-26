@@ -12,6 +12,7 @@ import {
   Alert,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { BackButton } from '../components/BackButton';
 
 type AboutScreenProps = {
   onBack?: () => void;
@@ -44,13 +45,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onBack }) => {
       
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={onBack} style={styles.backButton}>
-          <Ionicons 
-            name="chevron-back" 
-            size={24} 
-            color={isDark ? '#FFFFFF' : '#000000'} 
-          />
-        </Pressable>
+        <BackButton onPress={onBack || (() => {})} />
         <Text style={[styles.title, isDark && styles.titleDark]}>About</Text>
         <View style={styles.headerSpacer} />
       </View>

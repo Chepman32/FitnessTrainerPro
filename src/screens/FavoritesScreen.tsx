@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { BackButton } from '../components/BackButton';
 import { useFavorites } from '../state/FavoritesContext';
 import { useTheme } from '../state/ThemeContext';
 
@@ -49,9 +50,7 @@ export const FavoritesScreen: React.FC<FavoritesScreenProps> = ({
         {/* Header with Back Button */}
         <View style={styles.header}>
           {onBack && (
-            <Pressable onPress={onBack} style={styles.backButton}>
-              <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
-            </Pressable>
+            <BackButton onPress={onBack} />
           )}
           <Text style={[styles.title, { color: theme.colors.text }]}>Favorites</Text>
           <View style={styles.headerSpacer} />
@@ -77,9 +76,7 @@ export const FavoritesScreen: React.FC<FavoritesScreenProps> = ({
       {/* Header with Back Button */}
       <View style={styles.header}>
         {onBack && (
-          <Pressable onPress={onBack} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
-          </Pressable>
+          <BackButton onPress={onBack} />
         )}
         <View style={styles.headerContent}>
           <Text style={[styles.title, { color: theme.colors.text }]}>Favorites</Text>

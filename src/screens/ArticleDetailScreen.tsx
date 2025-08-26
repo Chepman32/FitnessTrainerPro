@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Article } from '../types/library';
 import { useFavorites } from '../state/FavoritesContext';
+import { BackButton } from '../components/BackButton';
 import { useTheme } from '../state/ThemeContext';
 
 type ArticleDetailScreenProps = {
@@ -170,11 +171,7 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
       
       {/* Header */}
       <View style={[styles.header, { backgroundColor: theme.colors.background, borderBottomColor: isDark ? '#333333' : '#E5E5E5' }]}>
-        <Pressable onPress={onBack} style={styles.backButton}>
-          <Text style={[styles.backButtonText, isDark && styles.backButtonTextDark]}>
-            ← Back
-          </Text>
-        </Pressable>
+        <BackButton onPress={onBack || (() => {})} />
         <Text style={[styles.headerTitle, isDark && styles.headerTitleDark]} numberOfLines={1}>
           Article
         </Text>
