@@ -6,6 +6,7 @@ import { Program, Step } from '../types/program';
 import { LibraryScreen } from '../screens/LibraryScreen';
 import { SeeAllScreen } from '../screens/SeeAllScreen';
 import { ArticleDetailScreen } from '../screens/ArticleDetailScreen';
+import { FriendsChallengeScreen } from '../screens/FriendsChallengeScreen';
 
 // Navigation parameter types
 export type LibraryStackParamList = {
@@ -119,6 +120,7 @@ export const LibraryNavigator: React.FC = () => {
         options={({ route }) => ({
           title: route.params.content.title,
           headerBackTitleVisible: false,
+          headerShown: false, // Using custom header in component
         })}
       />
 
@@ -464,11 +466,11 @@ const ProgramDetailScreen: React.FC<{ route: any; navigation: any }> = ({
 
 const ChallengeDetailScreen: React.FC<{ route: any; navigation: any }> = ({
   route,
-  navigation: _navigation,
+  navigation,
 }) => {
   const { challengeId, content } = route.params;
   console.log('Challenge:', challengeId, content.title);
-  return <View><Text>Challenge Detail</Text></View>;
+  return <FriendsChallengeScreen navigation={navigation} />;
 };
 
 // Wrapper for ArticleDetailScreen to connect with navigation
