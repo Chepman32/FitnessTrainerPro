@@ -10,7 +10,7 @@ import {
 import { TRAINING_TYPES, TrainingType } from '../data/trainingTypes';
 import { useSession } from '../state/SessionContext';
 import { useTheme } from '../state/ThemeContext';
-import ExerciseIcon from '../components/ExerciseIcons';
+import ExercisePhoto from '../components/ExercisePhotos';
 
 type Props = {
   onSelect?: (t: TrainingType) => void;
@@ -51,12 +51,13 @@ export const HomeScreen: React.FC<Props> = ({ onSelect, onStart }) => {
         }
         renderItem={({ item, index }) => (
           <Pressable
-            style={[styles.card, gradientByIndex(index)]}
+            style={styles.card}
             onPress={() => onSelect?.(item)}
           >
-            <View style={styles.cardIconWrap}>
-              <ExerciseIcon id={item.id as any} />
+            <View style={styles.cardPhotoContainer}>
+              <ExercisePhoto id={item.id as any} />
             </View>
+            <View style={styles.cardOverlay} />
             <Text style={styles.cardTitle}>{item.title}</Text>
           </Pressable>
         )}
@@ -81,17 +82,7 @@ const QuickChip: React.FC<{ label: string; active?: boolean }> = ({
   </View>
 );
 
-const gradientByIndex = (i: number) => {
-  const presets = [
-    { backgroundColor: '#FF7A30' },
-    { backgroundColor: '#B84DFF' },
-    { backgroundColor: '#2DC7FF' },
-    { backgroundColor: '#2D7BFF' },
-    { backgroundColor: '#3BA3FF' },
-    { backgroundColor: '#1E62D0' },
-  ];
-  return presets[i % presets.length];
-};
+
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
@@ -112,17 +103,32 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 6 },
+    overflow: 'hidden',
   },
-  cardIconWrap: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    opacity: 0.9,
-  },
+
   cardTitle: {
     color: 'white',
     fontSize: 18,
     fontWeight: '700',
+  },
+  cardPhotoContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 24,
+    overflow: 'hidden',
+  },
+
+  cardOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 24,
   },
 
   quickStartBtn: {
