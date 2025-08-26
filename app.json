@@ -1,4 +1,13 @@
 {
   "name": "FitnessTrainerPro",
-  "displayName": "FitnessTrainerPro"
+  "displayName": "FitnessTrainerPro",
+  "expo": {
+    "icon": "./src/assets/default_icon.png",
+    "ios": {
+      "icon": "./src/assets/default_icon.png"
+    },
+    "android": {
+      "icon": "./src/assets/default_icon.png"
+    }
+  }
 }
