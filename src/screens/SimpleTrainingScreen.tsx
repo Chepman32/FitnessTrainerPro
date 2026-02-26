@@ -1,16 +1,18 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Pressable,
+  Animated,
+  Dimensions,
   SafeAreaView,
   StatusBar,
-  Alert,
+  PanResponder,
   AppState,
   AppStateStatus,
   Vibration
 } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../state/ThemeContext';
 import { CountdownRing } from '../components/training/SimpleCountdownRing';
 import { Program, ExerciseStep, formatDuration } from '../types/program';
@@ -24,6 +26,8 @@ interface SimpleTrainingScreenProps {
 }
 
 const TICK_INTERVAL = 100; // Update every 100ms for smooth animation
+const SWIPE_EXIT_DISTANCE = 70;
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export const SimpleTrainingScreen: React.FC<SimpleTrainingScreenProps> = ({
   program,
@@ -44,6 +48,12 @@ export const SimpleTrainingScreen: React.FC<SimpleTrainingScreenProps> = ({
   const [countdownSeconds, setCountdownSeconds] = useState(3);
   
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const swipeTranslateY = useRef(new Animated.Value(0)).current;
+  const ringScale = useRef(new Animated.Value(1)).current;
+  const ringTranslateX = useRef(new Animated.Value(0)).current;
+  const ringTranslateY = useRef(new Animated.Value(0)).current;
+  const hasPlayedRingTransitionRef = useRef(false);
+  const isExitingRef = useRef(false);
   const startTimeRef = useRef<number>(0);
   const pausedDurationRef = useRef<number>(0);
   const lastUpdateRef = useRef<number>(0);
@@ -60,7 +70,41 @@ export const SimpleTrainingScreen: React.FC<SimpleTrainingScreenProps> = ({
     setHasStarted(false);
     setCountdownSeconds(3);
     pausedDurationRef.current = 0;
-  }, [totalDurationMs]);
+    hasPlayedRingTransitionRef.current = false;
+    ringScale.setValue(1);
+    ringTranslateX.setValue(0);
+    ringTranslateY.setValue(0);
+  }, [totalDurationMs, ringScale, ringTranslateX, ringTranslateY]);
+
+  useEffect(() => {
+    if (!hasStarted || hasPlayedRingTransitionRef.current) return;
+
+    hasPlayedRingTransitionRef.current = true;
+
+    Animated.parallel([
+      Animated.spring(ringScale, {
+        toValue: 0.5,
+        velocity: 1.8,
+        tension: 90,
+        friction: 10,
+        useNativeDriver: true
+      }),
+      Animated.spring(ringTranslateX, {
+        toValue: SCREEN_WIDTH * 0.24,
+        velocity: 1.8,
+        tension: 90,
+        friction: 10,
+        useNativeDriver: true
+      }),
+      Animated.spring(ringTranslateY, {
+        toValue: -SCREEN_HEIGHT * 0.34,
+        velocity: -1.5,
+        tension: 90,
+        friction: 10,
+        useNativeDriver: true
+      })
+    ]).start();
+  }, [hasStarted, ringScale, ringTranslateX, ringTranslateY]);
   
   // Start countdown automatically
   useEffect(() => {
@@ -151,22 +195,73 @@ export const SimpleTrainingScreen: React.FC<SimpleTrainingScreenProps> = ({
   }, [isPaused]);
   
   const handleExit = useCallback(() => {
-    Alert.alert(
-      'Exit Workout',
-      'Are you sure you want to exit? Your progress will be lost.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Exit', 
-          style: 'destructive',
-          onPress: () => {
-            stopTimer();
-            onExit();
-          }
-        }
-      ]
-    );
+    stopTimer();
+    onExit();
   }, [stopTimer, onExit]);
+
+  const handleScreenPress = useCallback(() => {
+    if (!isRunning) return;
+
+    if (isPaused) {
+      handleResume();
+      return;
+    }
+
+    handlePause();
+  }, [isRunning, isPaused, handlePause, handleResume]);
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onPanResponderGrant: () => {
+          swipeTranslateY.stopAnimation();
+        },
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderMove: (_, gestureState) => {
+          swipeTranslateY.setValue(Math.max(0, gestureState.dy));
+        },
+        onPanResponderRelease: (_, gestureState) => {
+          const isVerticalSwipeDown =
+            gestureState.dy > SWIPE_EXIT_DISTANCE &&
+            Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
+
+          if (isVerticalSwipeDown) {
+            isExitingRef.current = true;
+            Animated.timing(swipeTranslateY, {
+              toValue: SCREEN_HEIGHT,
+              duration: 220,
+              useNativeDriver: true
+            }).start(() => {
+              swipeTranslateY.setValue(0);
+              isExitingRef.current = false;
+              handleExit();
+            });
+            return;
+          }
+
+          Animated.spring(swipeTranslateY, {
+            toValue: 0,
+            useNativeDriver: true,
+            speed: 20,
+            bounciness: 6
+          }).start();
+
+          if (Math.abs(gestureState.dy) < 10 && Math.abs(gestureState.dx) < 10 && !isExitingRef.current) {
+            handleScreenPress();
+          }
+        },
+        onPanResponderTerminate: () => {
+          Animated.spring(swipeTranslateY, {
+            toValue: 0,
+            useNativeDriver: true,
+            speed: 20,
+            bounciness: 6
+          }).start();
+        }
+      }),
+    [handleExit, handleScreenPress, swipeTranslateY]
+  );
   
   // Handle app state changes
   useEffect(() => {
@@ -218,79 +313,87 @@ export const SimpleTrainingScreen: React.FC<SimpleTrainingScreenProps> = ({
   }
   
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      {...panResponder.panHandlers}
+    >
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
-      
-      {/* Header - Simple with just exit button */}
-      <View style={styles.header}>
-        <Pressable onPress={handleExit} style={styles.exitButton}>
-          <Text style={[styles.exitButtonText, { color: theme.colors.primary }]}>
-            Exit
-          </Text>
-        </Pressable>
-        <View style={styles.headerSpacer} />
-      </View>
-      
-      {/* Main Content */}
-      <View style={styles.mainContent}>
-        {/* Exercise Info */}
-        <View style={styles.exerciseInfo}>
-          <Text style={[styles.exerciseType, { color: theme.colors.textSecondary }]}>
-            EXERCISE
-          </Text>
-          <Text style={[styles.exerciseTitle, { color: theme.colors.text }]}>
-            {exercise.title}
-          </Text>
-          {exercise.description && (
+
+      <Animated.View
+        style={[
+          styles.fullScreenPressable,
+          {
+            transform: [{ translateY: swipeTranslateY }],
+            opacity: swipeTranslateY.interpolate({
+              inputRange: [0, SCREEN_HEIGHT * 0.75],
+              outputRange: [1, 0.92],
+              extrapolate: 'clamp'
+            })
+          }
+        ]}
+        {...panResponder.panHandlers}
+      >
+        {/* Main Content */}
+        <View style={styles.mainContent}>
+          {/* Exercise Info */}
+          <View style={styles.exerciseInfo}>
+            <Text style={[styles.exerciseType, { color: theme.colors.textSecondary }]}>
+              Push-ups
+            </Text>
+            <Text style={[styles.exerciseTitle, { color: theme.colors.text }]}>
+              {exercise.title}
+            </Text>
             <Text style={[styles.exerciseDescription, { color: theme.colors.textSecondary }]}>
-              {exercise.description}
+              swipe down to exit the session
             </Text>
-          )}
-        </View>
-        
-        {/* Timer and Ring */}
-        <View style={styles.timerContainer}>
-          <CountdownRing
-            progress={progress}
-            size={240}
-            strokeWidth={16}
-            colors={{
-              track: isDark ? '#333333' : '#E5E5E5',
-              progress: theme.colors.primary,
-              progressCritical: '#FF3B30'
-            }}
-          />
-          <View style={styles.timerTextContainer}>
-            <Text style={[styles.timerText, { color: theme.colors.text }]}>
-              {formattedTime}
-            </Text>
-            {exercise.targetReps && (
-              <Text style={[styles.targetReps, { color: theme.colors.textSecondary }]}>
-                Target: {exercise.targetReps} reps
-              </Text>
-            )}
+          </View>
+          
+          {/* Timer and Ring */}
+          <View style={styles.timerContainer}>
+            <Animated.View
+              style={[
+                styles.ringContainer,
+                {
+                  transform: [
+                    { translateX: ringTranslateX },
+                    { translateY: ringTranslateY },
+                    { scale: ringScale }
+                  ]
+                }
+              ]}
+            >
+              <CountdownRing
+                progress={progress}
+                size={240}
+                strokeWidth={16}
+                colors={{
+                  track: isDark ? '#333333' : '#E5E5E5',
+                  progress: theme.colors.primary,
+                  progressCritical: '#FF3B30'
+                }}
+              />
+              <View style={styles.timerTextContainer}>
+                <Text style={[styles.timerText, { color: theme.colors.text }]}>
+                  {formattedTime}
+                </Text>
+                {exercise.targetReps && (
+                  <Text style={[styles.targetReps, { color: theme.colors.textSecondary }]}>
+                    Target: {exercise.targetReps} reps
+                  </Text>
+                )}
+              </View>
+            </Animated.View>
           </View>
         </View>
-        
-        {/* Simple Controls - Only pause/resume */}
-        <View style={styles.controlsContainer}>
-          {isPaused ? (
-            <Pressable 
-              style={[styles.controlButton, styles.resumeButton]}
-              onPress={handleResume}
-            >
-              <Text style={styles.controlButtonText}>Resume</Text>
-            </Pressable>
-          ) : (
-            <Pressable 
-              style={[styles.controlButton, styles.pauseButton]}
-              onPress={handlePause}
-            >
-              <Text style={styles.controlButtonText}>Pause</Text>
-            </Pressable>
-          )}
+
+        <View style={styles.pauseIconOverlay} pointerEvents="none">
+          <Ionicons
+            name={isPaused ? 'play' : 'pause'}
+            size={110}
+            color={isDark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.18)'}
+          />
         </View>
-      </View>
+      </Animated.View>
     </SafeAreaView>
   );
 };
@@ -315,21 +418,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginTop: 32,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  exitButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  exitButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  headerSpacer: {
+  fullScreenPressable: {
     flex: 1,
   },
   mainContent: {
@@ -364,8 +453,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 40,
   },
+  ringContainer: {
+    width: 240,
+    height: 240,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   timerTextContainer: {
     position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    justifyContent: 'center',
     alignItems: 'center',
   },
   timerText: {
@@ -378,26 +478,11 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: 4,
   },
-  controlsContainer: {
+  pauseIconOverlay: {
+    position: 'absolute',
+    right: 0,
+    bottom: 48,
+    left: 0,
     alignItems: 'center',
-    marginBottom: 40,
-  },
-  controlButton: {
-    paddingVertical: 16,
-    paddingHorizontal: 48,
-    borderRadius: 12,
-    alignItems: 'center',
-    minWidth: 120,
-  },
-  pauseButton: {
-    backgroundColor: '#FF9500',
-  },
-  resumeButton: {
-    backgroundColor: '#34C759',
-  },
-  controlButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '600',
   },
 });
