@@ -90,14 +90,14 @@ export const SimpleTrainingScreen: React.FC<SimpleTrainingScreenProps> = ({
         useNativeDriver: true
       }),
       Animated.spring(ringTranslateX, {
-        toValue: SCREEN_WIDTH * 0.24,
+        toValue: SCREEN_WIDTH * 0.3,
         velocity: 1.8,
         tension: 90,
         friction: 10,
         useNativeDriver: true
       }),
       Animated.spring(ringTranslateY, {
-        toValue: -SCREEN_HEIGHT * 0.34,
+        toValue: -SCREEN_HEIGHT * 0.52,
         velocity: -1.5,
         tension: 90,
         friction: 10,
