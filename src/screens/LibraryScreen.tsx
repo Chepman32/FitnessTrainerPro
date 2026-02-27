@@ -22,6 +22,7 @@ import {
 } from '../components/library/ContentShelf';
 import { ContentCard } from '../components/library/ContentCard';
 import { libraryApi } from '../services/libraryApi';
+import { remoteImageCacheService } from '../services/remoteImageCacheService';
 
 type LibraryScreenProps = {
   onContentPress?: (content: Content) => void;
@@ -42,11 +43,11 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
 
   const { sections, isLoading, searchQuery } = libraryState;
 
-  // Initial load
+  // Initial load — use cached data (no force refresh) for instant display
   useEffect(() => {
     const loadInitialData = async () => {
       try {
-        await libraryActions.refreshLibrary();
+        await libraryActions.refreshLibrary(false);
       } finally {
         setIsInitialLoad(false);
       }
@@ -68,6 +69,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
       try {
         const result = await libraryApi.searchContent(searchQuery, libraryState.filters);
         setSearchResults(result.items);
+        void remoteImageCacheService.prefetchContentItems(result.items);
       } catch (error) {
         console.error('Search failed:', error);
         setSearchResults([]);

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StatusBar, useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -32,6 +32,7 @@ import { OnboardingProvider, useOnboarding } from './src/state/OnboardingContext
 import { ThemeProvider, useTheme } from './src/state/ThemeContext';
 import { Program, ExerciseStep } from './src/types/program';
 import { TRAINING_TYPES } from './src/data/trainingTypes';
+import { remoteImageCacheService } from './src/services/remoteImageCacheService';
 
 type RootStackParamList = {
   home: undefined;
@@ -362,6 +363,11 @@ function RootNavigator() {
 
 function App() {
   const colorScheme = useColorScheme();
+
+  useEffect(() => {
+    void remoteImageCacheService.init();
+  }, []);
+
   return (
     <GestureHandlerRootView style={styles.flex1}>
       <SafeAreaProvider>

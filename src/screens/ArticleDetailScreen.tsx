@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,10 @@ import { Article } from '../types/library';
 import { useFavorites } from '../state/FavoritesContext';
 import { BackButton } from '../components/BackButton';
 import { useTheme } from '../state/ThemeContext';
+import {
+  getCachedImageSource,
+  remoteImageCacheService,
+} from '../services/remoteImageCacheService';
 
 type ArticleDetailScreenProps = {
   article: Article;
@@ -29,6 +33,13 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
   const isDark = theme.mode === 'dark';
   const { actions: favoritesActions } = useFavorites();
   const [isToggling, setIsToggling] = useState(false);
+
+  useEffect(() => {
+    void remoteImageCacheService.prefetchUrls([
+      article.coverUrl,
+      article.thumbnailUrl,
+    ]);
+  }, [article.coverUrl, article.thumbnailUrl]);
 
   // Check if this article is favorited
   const isFavorited = favoritesActions.isFavorited(article.id);
@@ -189,7 +200,7 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Hero Image */}
         <ImageBackground
-          source={{ uri: article.coverUrl }}
+          source={getCachedImageSource(article.coverUrl)}
           style={styles.heroImage}
           imageStyle={styles.heroImageStyle}
         >

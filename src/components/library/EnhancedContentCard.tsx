@@ -6,14 +6,14 @@ import {
   Pressable,
   StyleSheet,
   useColorScheme,
-  ActivityIndicator,
   Animated,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Content } from '../../types/library';
 import { useHaptics } from '../../utils/haptics';
-import { useAnimations, ANIMATION_CONFIGS } from '../../utils/animations';
+import { useAnimations } from '../../utils/animations';
 import { useCardAnalytics } from '../../hooks/useAnalytics';
+import { getCachedImageSource } from '../../services/remoteImageCacheService';
 
 type EnhancedContentCardProps = {
   content: Content;
@@ -27,7 +27,6 @@ type EnhancedContentCardProps = {
 export const EnhancedContentCard = memo<EnhancedContentCardProps>(
   ({ content, section, position, onPress, style, isVisible = true }) => {
     const isDark = useColorScheme() === 'dark';
-    const [imageLoaded, setImageLoaded] = useState(false);
     const [imageError, setImageError] = useState(false);
 
     const scaleValue = useRef(new Animated.Value(1)).current;
@@ -58,14 +57,8 @@ export const EnhancedContentCard = memo<EnhancedContentCardProps>(
       onPress?.(content);
     }, [onPress, content, haptics]);
 
-    // Memoized image handlers
-    const handleImageLoad = useCallback(() => {
-      setImageLoaded(true);
-    }, []);
-
     const handleImageError = useCallback(() => {
       setImageError(true);
-      setImageLoaded(false);
     }, []);
 
     // Memoized press handlers with animations
@@ -221,21 +214,13 @@ export const EnhancedContentCard = memo<EnhancedContentCardProps>(
           {/* Enhanced Image Container */}
           <View style={styles.imageContainer}>
             {content.coverUrl && !imageError ? (
-              <>
-                <Image
-                  source={{ uri: content.coverUrl }}
-                  style={styles.coverImage}
-                  onLoad={handleImageLoad}
-                  onError={handleImageError}
-                  resizeMode="cover"
-                  fadeDuration={200}
-                />
-                {!imageLoaded && (
-                  <View style={styles.imageLoader}>
-                    <ActivityIndicator size="small" color="#5B9BFF" />
-                  </View>
-                )}
-              </>
+              <Image
+                source={getCachedImageSource(content.coverUrl)}
+                style={styles.coverImage}
+                onError={handleImageError}
+                resizeMode="cover"
+                fadeDuration={200}
+              />
             ) : (
               <View style={[styles.coverImage, styles.placeholderImage]}>
                 <Ionicons
@@ -342,16 +327,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  imageLoader: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.1)',
   },
   premiumBadge: {
     position: 'absolute',

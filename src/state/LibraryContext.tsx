@@ -12,6 +12,7 @@ import {
   LibrarySection,
   DEFAULT_FILTERS,
 } from '../types/library';
+import { remoteImageCacheService } from '../services/remoteImageCacheService';
 
 // Action types
 type LibraryAction =
@@ -116,7 +117,7 @@ const LibraryContext = createContext<{
   actions: {
     updateFilters: () => {},
     setSearchQuery: () => {},
-    refreshLibrary: async () => {},
+    refreshLibrary: async (_forceRefresh?: boolean) => {},
     loadMoreSection: async () => {},
     clearFilters: () => {},
   },
@@ -137,7 +138,7 @@ export const LibraryProvider: React.FC<React.PropsWithChildren> = ({
     dispatch({ type: 'SET_SEARCH_QUERY', payload: query });
   }, []);
 
-  const refreshLibrary = useCallback(async () => {
+  const refreshLibrary = useCallback(async (forceRefresh: boolean = true) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
@@ -146,7 +147,10 @@ export const LibraryProvider: React.FC<React.PropsWithChildren> = ({
       const { libraryApi } = await import('../services/libraryApi');
 
       // Get library sections with current filters
-      const sections = await libraryApi.getLibrarySections(state.filters, true);
+      const sections = await libraryApi.getLibrarySections(state.filters, forceRefresh);
+
+      // Warm native image cache in background for smoother repeat loads.
+      void remoteImageCacheService.prefetchSections(sections);
 
       dispatch({ type: 'SET_SECTIONS', payload: sections });
       dispatch({ type: 'SET_LAST_REFRESH', payload: new Date().toISOString() });
@@ -172,6 +176,8 @@ export const LibraryProvider: React.FC<React.PropsWithChildren> = ({
           sectionId,
           section.nextCursor,
         );
+
+        void remoteImageCacheService.prefetchContentItems(result.items);
 
         dispatch({
           type: 'UPDATE_SECTION',

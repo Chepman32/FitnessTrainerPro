@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,10 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LibraryStackParamList } from '../navigation/LibraryNavigator';
 import { Content } from '../types/library';
 import { useLibrary } from '../state/LibraryContext';
+import {
+  getCachedImageSource,
+  remoteImageCacheService,
+} from '../services/remoteImageCacheService';
 
 // Navigation types
 type SeeAllScreenRouteProp = RouteProp<LibraryStackParamList, 'SeeAllSection'>;
@@ -44,7 +48,7 @@ export const SeeAllScreen: React.FC<SeeAllScreenProps> = ({ route, navigation })
   // No filtering in this simplified view
 
   // Simply use section items
-  const processedContent = section.items || [];
+  const processedContent = useMemo(() => section.items || [], [section.items]);
 
 
 
@@ -150,6 +154,13 @@ export const SeeAllScreen: React.FC<SeeAllScreenProps> = ({ route, navigation })
     return typeImages[imageIndex];
   }, []);
 
+  useEffect(() => {
+    const imageUrls = processedContent.map((item, index) =>
+      getContentImage(item, index),
+    );
+    void remoteImageCacheService.prefetchUrls(imageUrls);
+  }, [processedContent, getContentImage]);
+
   // Get content subtitle
   const getContentSubtitle = useCallback((item: Content) => {
     switch (item.type) {
@@ -176,7 +187,7 @@ export const SeeAllScreen: React.FC<SeeAllScreenProps> = ({ route, navigation })
         accessibilityLabel={`${item.title}, ${getContentSubtitle(item)}`}
       >
         <ImageBackground
-          source={{ uri: getContentImage(item, index) }}
+          source={getCachedImageSource(getContentImage(item, index))}
           style={styles.gridCardImage}
           imageStyle={styles.gridCardImageStyle}
         >
@@ -209,7 +220,7 @@ export const SeeAllScreen: React.FC<SeeAllScreenProps> = ({ route, navigation })
         accessibilityLabel={`${item.title}, ${getContentSubtitle(item)}`}
       >
         <ImageBackground
-          source={{ uri: getContentImage(item, index) }}
+          source={getCachedImageSource(getContentImage(item, index))}
           style={styles.listRowImage}
           imageStyle={styles.listRowImageStyle}
         >

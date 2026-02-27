@@ -5,7 +5,6 @@ import {
   Pressable,
   StyleSheet,
   Image,
-  ActivityIndicator,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
@@ -17,12 +16,12 @@ import {
 } from '../../types/library';
 import { useUserProgress } from '../../state/UserProgressContext';
 import { formatProgressText } from '../../state/UserProgressContext';
-import { premiumService } from '../../services/premiumService';
 import { useTheme } from '../../state/ThemeContext';
 import {
   AccessibilityUtils,
   useAccessibility,
 } from '../../utils/accessibility';
+import { getCachedImageSource } from '../../services/remoteImageCacheService';
 
 type ContentCardProps = {
   content: Content;
@@ -39,10 +38,9 @@ export const ContentCard: React.FC<ContentCardProps> = ({
 }) => {
   const { theme } = useTheme();
   const isDark = theme.mode === 'dark';
-  const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
   const { actions: progressActions } = useUserProgress();
-  const { isScreenReaderEnabled, isReduceMotionEnabled } = useAccessibility();
+  const { isReduceMotionEnabled } = useAccessibility();
 
   const progress = progressActions.getProgress(content.id);
   const hasProgress =
@@ -107,23 +105,13 @@ export const ContentCard: React.FC<ContentCardProps> = ({
       {/* Cover Image */}
       <View style={styles.imageContainer}>
         {content.coverUrl && !imageError ? (
-          <>
-            <Image
-              source={{ uri: content.coverUrl }}
-              style={styles.coverImage}
-              onLoadStart={() => setImageLoading(true)}
-              onLoadEnd={() => setImageLoading(false)}
-              onError={() => {
-                setImageError(true);
-                setImageLoading(false);
-              }}
-            />
-            {imageLoading && (
-              <View style={styles.imageLoader}>
-                <ActivityIndicator size="small" color="#5B9BFF" />
-              </View>
-            )}
-          </>
+          <Image
+            source={getCachedImageSource(content.coverUrl)}
+            style={styles.coverImage}
+            onError={() => {
+              setImageError(true);
+            }}
+          />
         ) : (
           <View style={[styles.coverImage, styles.placeholderImage]}>
             <Ionicons
@@ -366,17 +354,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  imageLoader: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.1)',
-  },
-
   premiumBadge: {
     position: 'absolute',
     top: 12,

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,10 +10,10 @@ import {
   Pressable,
   ActivityIndicator,
 } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 import { BackButton } from '../components/BackButton';
 import { useFavorites } from '../state/FavoritesContext';
 import { useTheme } from '../state/ThemeContext';
+import { getCachedImageSource, remoteImageCacheService } from '../services/remoteImageCacheService';
 
 type FavoritesScreenProps = {
   onArticlePress?: (article: any) => void;
@@ -27,6 +27,13 @@ export const FavoritesScreen: React.FC<FavoritesScreenProps> = ({
   const { theme } = useTheme();
   const isDark = theme.mode === 'dark';
   const { state: favoritesState, actions: favoritesActions } = useFavorites();
+
+  useEffect(() => {
+    const imageUrls = favoritesState.favorites.map(
+      favorite => favorite.data.coverUrl,
+    );
+    void remoteImageCacheService.prefetchUrls(imageUrls);
+  }, [favoritesState.favorites]);
 
   if (favoritesState.isLoading) {
     return (
@@ -95,7 +102,7 @@ export const FavoritesScreen: React.FC<FavoritesScreenProps> = ({
             onPress={() => onArticlePress?.(favorite.data)}
           >
             <ImageBackground
-              source={{ uri: favorite.data.coverUrl }}
+              source={getCachedImageSource(favorite.data.coverUrl)}
               style={styles.cardImage}
               imageStyle={styles.cardImageStyle}
             >

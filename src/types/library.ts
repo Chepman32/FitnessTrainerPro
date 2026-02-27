@@ -125,7 +125,7 @@ export type LibraryState = {
 export type LibraryActions = {
   updateFilters: (filters: Partial<LibraryFilters>) => void;
   setSearchQuery: (query: string) => void;
-  refreshLibrary: () => Promise<void>;
+  refreshLibrary: (forceRefresh?: boolean) => Promise<void>;
   loadMoreSection: (sectionId: string) => Promise<void>;
   clearFilters: () => void;
 };

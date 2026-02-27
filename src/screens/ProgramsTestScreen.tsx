@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,10 @@ import { SAMPLE_PROGRAMS } from '../data/samplePrograms';
 import { formatDuration, getTotalDuration } from '../types/program';
 import { useTheme } from '../state/ThemeContext';
 import { BackButton } from '../components/BackButton';
+import {
+  getCachedImageSource,
+  remoteImageCacheService,
+} from '../services/remoteImageCacheService';
 
 interface ProgramsTestScreenProps {
   onProgramSelect: (program: any) => void;
@@ -25,6 +29,10 @@ export const ProgramsTestScreen: React.FC<ProgramsTestScreenProps> = ({
 }) => {
   const { theme } = useTheme();
   const isDark = theme.mode === 'dark';
+
+  useEffect(() => {
+    void remoteImageCacheService.prefetchPrograms(SAMPLE_PROGRAMS);
+  }, []);
 
   const getLevelColor = (level: string) => {
     switch (level) {
@@ -60,7 +68,7 @@ export const ProgramsTestScreen: React.FC<ProgramsTestScreenProps> = ({
             onPress={() => onProgramSelect(program)}
           >
             <ImageBackground
-              source={{ uri: program.thumbnailUrl }}
+              source={getCachedImageSource(program.thumbnailUrl)}
               style={styles.programImage}
               imageStyle={styles.programImageStyle}
             >

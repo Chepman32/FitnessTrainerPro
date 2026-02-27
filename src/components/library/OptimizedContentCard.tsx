@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useState, useRef } from 'react';
+import React, { memo, useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   Pressable,
   StyleSheet,
   useColorScheme,
-  ActivityIndicator,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Content } from '../../types/library';
@@ -15,6 +14,7 @@ import {
   useOptimizedImageProps,
   useIntersectionObserver,
 } from '../../utils/performance';
+import { getCachedImageSource } from '../../services/remoteImageCacheService';
 
 type OptimizedContentCardProps = {
   content: Content;
@@ -28,13 +28,10 @@ type OptimizedContentCardProps = {
 export const OptimizedContentCard = memo<OptimizedContentCardProps>(
   ({ content, onPress, style, index = 0, isVisible = true }) => {
     const isDark = useColorScheme() === 'dark';
-    const [imageLoaded, setImageLoaded] = useState(false);
     const [imageError, setImageError] = useState(false);
     const [shouldLoadImage, setShouldLoadImage] = useState(isVisible);
 
-    const { measureRender } = usePerformanceMonitor(
-      `ContentCard-${content.type}-${index}`,
-    );
+    usePerformanceMonitor(`ContentCard-${content.type}-${index}`);
     const imageProps = useOptimizedImageProps();
 
     // Intersection observer for lazy loading
@@ -54,14 +51,8 @@ export const OptimizedContentCard = memo<OptimizedContentCardProps>(
       onPress?.(content);
     }, [onPress, content]);
 
-    // Memoized image load handlers
-    const handleImageLoad = useCallback(() => {
-      setImageLoaded(true);
-    }, []);
-
     const handleImageError = useCallback(() => {
       setImageError(true);
-      setImageLoaded(false);
     }, []);
 
     // Memoized styles
@@ -137,20 +128,12 @@ export const OptimizedContentCard = memo<OptimizedContentCardProps>(
         {/* Optimized Image Loading */}
         <View style={styles.imageContainer}>
           {shouldLoadImage && content.coverUrl && !imageError ? (
-            <>
-              <Image
-                source={{ uri: content.coverUrl }}
-                style={styles.coverImage}
-                onLoad={handleImageLoad}
-                onError={handleImageError}
-                {...imageProps}
-              />
-              {!imageLoaded && (
-                <View style={styles.imageLoader}>
-                  <ActivityIndicator size="small" color="#5B9BFF" />
-                </View>
-              )}
-            </>
+            <Image
+              source={getCachedImageSource(content.coverUrl)}
+              style={styles.coverImage}
+              onError={handleImageError}
+              {...imageProps}
+            />
           ) : (
             <View style={[styles.coverImage, styles.placeholderImage]}>
               <Ionicons
@@ -259,16 +242,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  imageLoader: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.1)',
   },
   premiumBadge: {
     position: 'absolute',

@@ -280,7 +280,7 @@ export const useOptimizedImageProps = () => {
       resizeMode: 'cover' as const,
       fadeDuration: isLowEnd ? 0 : 200,
       progressiveRenderingEnabled: !isLowEnd,
-      cache: 'default' as const,
+      cache: 'force-cache' as const,
     };
   }, []);
 };
