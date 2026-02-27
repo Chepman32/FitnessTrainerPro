@@ -55,6 +55,9 @@ export const SimpleTrainingScreen: React.FC<SimpleTrainingScreenProps> = ({
   const ringScale = useRef(new Animated.Value(1)).current;
   const ringTranslateX = useRef(new Animated.Value(0)).current;
   const ringTranslateY = useRef(new Animated.Value(0)).current;
+  const videoOpacity = useRef(new Animated.Value(0)).current;
+  const videoScale = useRef(new Animated.Value(0.88)).current;
+  const videoTranslateY = useRef(new Animated.Value(60)).current;
   const hasPlayedRingTransitionRef = useRef(false);
   const isExitingRef = useRef(false);
   const startTimeRef = useRef<number>(0);
@@ -82,7 +85,10 @@ export const SimpleTrainingScreen: React.FC<SimpleTrainingScreenProps> = ({
     ringScale.setValue(1);
     ringTranslateX.setValue(0);
     ringTranslateY.setValue(0);
-  }, [totalDurationMs, ringScale, ringTranslateX, ringTranslateY]);
+    videoOpacity.setValue(0);
+    videoScale.setValue(0.88);
+    videoTranslateY.setValue(60);
+  }, [totalDurationMs, ringScale, ringTranslateX, ringTranslateY, videoOpacity, videoScale, videoTranslateY]);
 
   useEffect(() => {
     if (!hasStarted || hasPlayedRingTransitionRef.current) return;
@@ -112,7 +118,17 @@ export const SimpleTrainingScreen: React.FC<SimpleTrainingScreenProps> = ({
         useNativeDriver: true
       })
     ]).start();
-  }, [hasStarted, ringScale, ringTranslateX, ringTranslateY]);
+
+    const springConfig = { tension: 100, friction: 12, useNativeDriver: true };
+    Animated.sequence([
+      Animated.delay(120),
+      Animated.parallel([
+        Animated.spring(videoOpacity, { toValue: 1, ...springConfig }),
+        Animated.spring(videoScale, { toValue: 1, velocity: 2, ...springConfig }),
+        Animated.spring(videoTranslateY, { toValue: 0, velocity: 3, ...springConfig }),
+      ]),
+    ]).start();
+  }, [hasStarted, ringScale, ringTranslateX, ringTranslateY, videoOpacity, videoScale, videoTranslateY]);
   
   // Start countdown automatically
   useEffect(() => {
@@ -357,7 +373,19 @@ export const SimpleTrainingScreen: React.FC<SimpleTrainingScreenProps> = ({
           </View>
           
           {exerciseVideoSource ? (
-            <View style={styles.videoArea} pointerEvents="none">
+            <Animated.View
+              style={[
+                styles.videoArea,
+                {
+                  opacity: videoOpacity,
+                  transform: [
+                    { scale: videoScale },
+                    { translateY: videoTranslateY },
+                  ],
+                },
+              ]}
+              pointerEvents="none"
+            >
               <View style={styles.videoContainer}>
                 <Video
                   source={exerciseVideoSource}
@@ -369,7 +397,7 @@ export const SimpleTrainingScreen: React.FC<SimpleTrainingScreenProps> = ({
                   ignoreSilentSwitch="ignore"
                 />
               </View>
-            </View>
+            </Animated.View>
           ) : (
             <View style={styles.videoSpacer} />
           )}
