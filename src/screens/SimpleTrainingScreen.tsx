@@ -98,14 +98,14 @@ export const SimpleTrainingScreen: React.FC<SimpleTrainingScreenProps> = ({
         useNativeDriver: true
       }),
       Animated.spring(ringTranslateX, {
-        toValue: SCREEN_WIDTH * 0.3,
+        toValue: SCREEN_WIDTH * 0.31,
         velocity: 1.8,
         tension: 90,
         friction: 10,
         useNativeDriver: true
       }),
       Animated.spring(ringTranslateY, {
-        toValue: -SCREEN_HEIGHT * 0.52,
+        toValue: -SCREEN_HEIGHT * 0.38,
         velocity: -1.5,
         tension: 90,
         friction: 10,
@@ -356,50 +356,13 @@ export const SimpleTrainingScreen: React.FC<SimpleTrainingScreenProps> = ({
             </Text>
           </View>
           
-          {/* Timer and Ring */}
-          <View style={styles.timerContainer}>
-            <Animated.View
-              style={[
-                styles.ringContainer,
-                {
-                  transform: [
-                    { translateX: ringTranslateX },
-                    { translateY: ringTranslateY },
-                    { scale: ringScale }
-                  ]
-                }
-              ]}
-            >
-              <CountdownRing
-                progress={progress}
-                size={240}
-                strokeWidth={16}
-                colors={{
-                  track: isDark ? '#333333' : '#E5E5E5',
-                  progress: theme.colors.primary,
-                  progressCritical: '#FF3B30'
-                }}
-              />
-              <View style={styles.timerTextContainer}>
-                <Text style={[styles.timerText, { color: theme.colors.text }]}>
-                  {formattedTime}
-                </Text>
-                {exercise.targetReps && (
-                  <Text style={[styles.targetReps, { color: theme.colors.textSecondary }]}>
-                    Target: {exercise.targetReps} reps
-                  </Text>
-                )}
-              </View>
-            </Animated.View>
-          </View>
-
           {exerciseVideoSource ? (
             <View style={styles.videoArea} pointerEvents="none">
               <View style={styles.videoContainer}>
                 <Video
                   source={exerciseVideoSource}
                   style={styles.video}
-                  resizeMode="contain"
+                  resizeMode="cover"
                   repeat
                   muted
                   paused={isPaused}
@@ -410,6 +373,43 @@ export const SimpleTrainingScreen: React.FC<SimpleTrainingScreenProps> = ({
           ) : (
             <View style={styles.videoSpacer} />
           )}
+        </View>
+
+        {/* Timer and Ring Overlay */}
+        <View style={styles.timerOverlayContainer} pointerEvents="none">
+          <Animated.View
+            style={[
+              styles.ringContainer,
+              {
+                transform: [
+                  { translateX: ringTranslateX },
+                  { translateY: ringTranslateY },
+                  { scale: ringScale }
+                ]
+              }
+            ]}
+          >
+            <CountdownRing
+              progress={progress}
+              size={240}
+              strokeWidth={16}
+              colors={{
+                track: isDark ? '#333333' : '#E5E5E5',
+                progress: theme.colors.primary,
+                progressCritical: '#FF3B30'
+              }}
+            />
+            <View style={styles.timerTextContainer}>
+              <Text style={[styles.timerText, { color: theme.colors.text }]}>
+                {formattedTime}
+              </Text>
+              {exercise.targetReps && (
+                <Text style={[styles.targetReps, { color: theme.colors.textSecondary }]}>
+                  Target: {exercise.targetReps} reps
+                </Text>
+              )}
+            </View>
+          </Animated.View>
         </View>
 
         <View style={styles.pauseIconOverlay} pointerEvents="none">
@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
   },
   exerciseInfo: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   exerciseType: {
     fontSize: 16,
@@ -475,6 +475,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
     paddingHorizontal: 20,
+  },
+  timerOverlayContainer: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 20,
+    elevation: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   timerContainer: {
     alignItems: 'center',
@@ -516,11 +523,8 @@ const styles = StyleSheet.create({
   videoArea: {
     flex: 1,
     width: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 24,
-    maxHeight: SCREEN_HEIGHT * 0.5,
+    marginTop: 12,
+    marginBottom: 18,
   },
   video: {
     width: '100%',
