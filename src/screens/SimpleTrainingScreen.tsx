@@ -13,6 +13,7 @@ import {
   Vibration
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import Video from 'react-native-video';
 import { useTheme } from '../state/ThemeContext';
 import { CountdownRing } from '../components/training/SimpleCountdownRing';
 import { Program, ExerciseStep, formatDuration } from '../types/program';
@@ -28,6 +29,8 @@ interface SimpleTrainingScreenProps {
 const TICK_INTERVAL = 100; // Update every 100ms for smooth animation
 const SWIPE_EXIT_DISTANCE = 70;
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+const PUSH_UPS_VIDEO = require('../assets/exercise-videos/push-ups.mp4');
 
 export const SimpleTrainingScreen: React.FC<SimpleTrainingScreenProps> = ({
   program,
@@ -60,6 +63,11 @@ export const SimpleTrainingScreen: React.FC<SimpleTrainingScreenProps> = ({
   
   const exercise = program.steps[0] as ExerciseStep; // Single exercise
   const totalDurationMs = exercise.durationSec * 1000;
+  const exerciseVideoSource = useMemo(() => {
+    const combined = `${exercise.title} ${exercise.id ?? ''} ${exercise.animationRef ?? ''}`.toLowerCase();
+    const isPushUps = combined.includes('push-up') || combined.includes('pushup') || combined.includes('push_ups');
+    return isPushUps ? PUSH_UPS_VIDEO : null;
+  }, [exercise.title, exercise.id, exercise.animationRef]);
   
   // Initialize state when component mounts
   useEffect(() => {
@@ -384,6 +392,24 @@ export const SimpleTrainingScreen: React.FC<SimpleTrainingScreenProps> = ({
               </View>
             </Animated.View>
           </View>
+
+          {exerciseVideoSource ? (
+            <View style={styles.videoArea} pointerEvents="none">
+              <View style={styles.videoContainer}>
+                <Video
+                  source={exerciseVideoSource}
+                  style={styles.video}
+                  resizeMode="contain"
+                  repeat
+                  muted
+                  paused={isPaused}
+                  ignoreSilentSwitch="ignore"
+                />
+              </View>
+            </View>
+          ) : (
+            <View style={styles.videoSpacer} />
+          )}
         </View>
 
         <View style={styles.pauseIconOverlay} pointerEvents="none">
@@ -424,7 +450,8 @@ const styles = StyleSheet.create({
   mainContent: {
     flex: 1,
     paddingHorizontal: 20,
-    justifyContent: 'space-around',
+    paddingTop: 24,
+    justifyContent: 'flex-start',
   },
   exerciseInfo: {
     alignItems: 'center',
@@ -451,7 +478,8 @@ const styles = StyleSheet.create({
   },
   timerContainer: {
     alignItems: 'center',
-    marginVertical: 40,
+    marginTop: 24,
+    marginBottom: 16,
   },
   ringContainer: {
     width: 240,
@@ -477,6 +505,29 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     marginTop: 4,
+  },
+  videoContainer: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 20,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(0,0,0,0.04)',
+  },
+  videoArea: {
+    flex: 1,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 24,
+    maxHeight: SCREEN_HEIGHT * 0.5,
+  },
+  video: {
+    width: '100%',
+    height: '100%',
+  },
+  videoSpacer: {
+    flex: 1,
   },
   pauseIconOverlay: {
     position: 'absolute',
