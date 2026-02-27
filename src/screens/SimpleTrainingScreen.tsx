@@ -30,7 +30,33 @@ const TICK_INTERVAL = 100; // Update every 100ms for smooth animation
 const SWIPE_EXIT_DISTANCE = 70;
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-const PUSH_UPS_VIDEO = require('../assets/exercise-videos/push-ups.mp4');
+const EXERCISE_VIDEO_SOURCES: Record<string, number> = {
+  pushup: require('../assets/exercise-videos/push-ups.mp4'),
+  pushups: require('../assets/exercise-videos/push-ups.mp4'),
+  pikepushups: require('../assets/exercise-videos/push-ups.mp4'),
+
+  burpee: require('../assets/exercise-videos/burpees.mp4'),
+  burpees: require('../assets/exercise-videos/burpees.mp4'),
+
+  crunch: require('../assets/exercise-videos/crunches.mp4'),
+  crunches: require('../assets/exercise-videos/crunches.mp4'),
+  bicyclecrunches: require('../assets/exercise-videos/crunches.mp4'),
+
+  lunge: require('../assets/exercise-videos/lunges.mp4'),
+  lunges: require('../assets/exercise-videos/lunges.mp4'),
+
+  plank: require('../assets/exercise-videos/plank.mp4'),
+  plankhold: require('../assets/exercise-videos/plank.mp4'),
+
+  squat: require('../assets/exercise-videos/squats.mp4'),
+  squats: require('../assets/exercise-videos/squats.mp4'),
+  bodyweightsquats: require('../assets/exercise-videos/squats.mp4'),
+  gentlesquats: require('../assets/exercise-videos/squats.mp4'),
+  jumpsquats: require('../assets/exercise-videos/squats.mp4'),
+};
+
+const normalizeVideoKey = (value: string = ''): string =>
+  value.toLowerCase().replace(/[^a-z0-9]/g, '');
 
 export const SimpleTrainingScreen: React.FC<SimpleTrainingScreenProps> = ({
   program,
@@ -67,10 +93,21 @@ export const SimpleTrainingScreen: React.FC<SimpleTrainingScreenProps> = ({
   const exercise = program.steps[0] as ExerciseStep; // Single exercise
   const totalDurationMs = exercise.durationSec * 1000;
   const exerciseVideoSource = useMemo(() => {
-    const combined = `${exercise.title} ${exercise.id ?? ''} ${exercise.animationRef ?? ''}`.toLowerCase();
-    const isPushUps = combined.includes('push-up') || combined.includes('pushup') || combined.includes('push_ups');
-    return isPushUps ? PUSH_UPS_VIDEO : null;
-  }, [exercise.title, exercise.id, exercise.animationRef]);
+    const keys = [
+      normalizeVideoKey(exercise.title),
+      normalizeVideoKey(exercise.id),
+      normalizeVideoKey(exercise.animationRef),
+      normalizeVideoKey(exercise.icon),
+    ].filter(Boolean);
+
+    for (const key of keys) {
+      if (EXERCISE_VIDEO_SOURCES[key]) {
+        return EXERCISE_VIDEO_SOURCES[key];
+      }
+    }
+
+    return null;
+  }, [exercise.title, exercise.id, exercise.animationRef, exercise.icon]);
   
   // Initialize state when component mounts
   useEffect(() => {
@@ -97,21 +134,21 @@ export const SimpleTrainingScreen: React.FC<SimpleTrainingScreenProps> = ({
 
     Animated.parallel([
       Animated.spring(ringScale, {
-        toValue: 0.8,
+        toValue: 0.72,
         velocity: 1.8,
         tension: 90,
         friction: 10,
         useNativeDriver: true
       }),
       Animated.spring(ringTranslateX, {
-        toValue: SCREEN_WIDTH * 0.23,
+        toValue: SCREEN_WIDTH * 0.2,
         velocity: 1.8,
         tension: 90,
         friction: 10,
         useNativeDriver: true
       }),
       Animated.spring(ringTranslateY, {
-        toValue: -SCREEN_HEIGHT * 0.33,
+        toValue: -SCREEN_HEIGHT * 0.3,
         velocity: -1.5,
         tension: 90,
         friction: 10,
