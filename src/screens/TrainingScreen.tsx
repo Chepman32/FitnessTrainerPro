@@ -33,7 +33,7 @@ interface TrainingScreenProps {
   soundsEnabled: boolean;
   vibrationsEnabled: boolean;
   onComplete: (results: any) => void;
-  onExit: () => void;
+  onExit: (partial: { totalElapsedMs: number }) => void;
 }
 
 const TICK_INTERVAL = 100; // Update every 100ms for smooth animation
@@ -241,12 +241,12 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({
       [
         { text: 'Cancel', style: 'cancel' },
         { 
-          text: 'Exit', 
+          text: 'Exit',
           style: 'destructive',
           onPress: () => {
             stopTimer();
             dispatch({ type: 'EXIT' });
-            onExit();
+            onExit({ totalElapsedMs: state.totalElapsedMs });
           }
         }
       ]

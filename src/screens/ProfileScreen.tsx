@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../state/ThemeContext';
+import { useWorkoutHistory } from '../state/WorkoutHistoryContext';
 
 type ProfileScreenProps = {
   onNavigateToFavorites?: () => void;
@@ -24,6 +25,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 }) => {
   const { theme } = useTheme();
   const isDark = theme.mode === 'dark';
+  const { stats } = useWorkoutHistory();
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -101,28 +103,28 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           <View style={styles.statsGrid}>
             <StatCard
               title="Workouts"
-              value="12"
+              value={String(stats.workoutsThisMonth)}
               subtitle="This month"
               icon="fitness-outline"
               isDark={isDark}
             />
             <StatCard
               title="Minutes"
-              value="180"
+              value={stats.totalMinutes.toLocaleString()}
               subtitle="Total active"
               icon="time-outline"
               isDark={isDark}
             />
             <StatCard
               title="Calories"
-              value="1,240"
+              value={stats.totalCalories.toLocaleString()}
               subtitle="Burned"
               icon="flame-outline"
               isDark={isDark}
             />
             <StatCard
               title="Streak"
-              value="5"
+              value={String(stats.streakDays)}
               subtitle="Days"
               icon="calendar-outline"
               isDark={isDark}

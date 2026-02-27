@@ -8,6 +8,7 @@ import { SessionProvider, useSession } from './src/state/SessionContext';
 import { LibraryProvider } from './src/state/LibraryContext';
 import { UserProgressProvider } from './src/state/UserProgressContext';
 import { FavoritesProvider } from './src/state/FavoritesContext';
+import { WorkoutHistoryProvider, useWorkoutHistory } from './src/state/WorkoutHistoryContext';
 import HomeScreen from './src/screens/HomeScreen';
 import SetupScreen from './src/screens/SetupScreen';
 import { TrainingScreen } from './src/screens/TrainingScreen';
@@ -168,19 +169,32 @@ function HomeTabs() {
 // Wrapper component to use hooks properly
 const TrainingScreenWrapper: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { setup, setState } = useSession();
+  const { addSession } = useWorkoutHistory();
   const dynamicProgram = createDynamicTrainingProgram(setup);
-  
+
   // Check if this is a simple single-step program from HomeScreen
   const isSimpleTraining = dynamicProgram.stepsCount === 1 && dynamicProgram.tags.includes('Simple');
-  
-  const handleComplete = (_results: any) => {
-    // Reset session state to prevent navigation issues
+
+  const handleComplete = (results: any) => {
+    addSession({
+      completedAt: new Date().toISOString(),
+      totalElapsedMs: results?.totalElapsedMs ?? 0,
+      estimatedCalories: results?.program?.estimatedCalories ?? dynamicProgram.estimatedCalories ?? 0,
+      programTitle: results?.program?.title ?? dynamicProgram.title,
+    });
     setState('idle');
     navigation.navigate('done');
   };
   
-  const handleExit = () => {
-    // Reset session state when exiting
+  const handleExit = ({ totalElapsedMs }: { totalElapsedMs: number }) => {
+    if (totalElapsedMs > 0) {
+      addSession({
+        completedAt: new Date().toISOString(),
+        totalElapsedMs,
+        estimatedCalories: Math.round((dynamicProgram.estimatedCalories ?? 0) * (totalElapsedMs / (dynamicProgram.totalActiveSec * 1000))),
+        programTitle: dynamicProgram.title,
+      });
+    }
     setState('idle');
     navigation.navigate('home');
   };
@@ -205,6 +219,38 @@ const TrainingScreenWrapper: React.FC<{ navigation: any }> = ({ navigation }) =>
       vibrationsEnabled={true}
       onComplete={handleComplete}
       onExit={handleExit}
+    />
+  );
+};
+
+const ComplexTrainingWrapper: React.FC<{ navigation: any; route: any }> = ({ navigation, route }) => {
+  const { addSession } = useWorkoutHistory();
+  const { program, soundsEnabled, vibrationsEnabled } = route.params;
+  return (
+    <TrainingScreen
+      program={program}
+      soundsEnabled={soundsEnabled}
+      vibrationsEnabled={vibrationsEnabled}
+      onComplete={(completionData) => {
+        addSession({
+          completedAt: new Date().toISOString(),
+          totalElapsedMs: completionData?.totalElapsedMs ?? 0,
+          estimatedCalories: completionData?.program?.estimatedCalories ?? program.estimatedCalories ?? 0,
+          programTitle: completionData?.program?.title ?? program.title,
+        });
+        navigation.replace('programFinish', { completionData });
+      }}
+      onExit={({ totalElapsedMs }) => {
+        if (totalElapsedMs > 0) {
+          addSession({
+            completedAt: new Date().toISOString(),
+            totalElapsedMs,
+            estimatedCalories: Math.round((program.estimatedCalories ?? 0) * (totalElapsedMs / (program.totalActiveSec * 1000))),
+            programTitle: program.title,
+          });
+        }
+        navigation.goBack();
+      }}
     />
   );
 };
@@ -281,22 +327,11 @@ function AppStack() {
           />
         )}
       </Stack.Screen>
-      <Stack.Screen 
+      <Stack.Screen
         name="complexTraining"
         options={{ headerShown: false }}
-      >
-        {({ navigation, route }) => (
-          <TrainingScreen
-            program={route.params.program}
-            soundsEnabled={route.params.soundsEnabled}
-            vibrationsEnabled={route.params.vibrationsEnabled}
-            onComplete={(completionData) => {
-              navigation.replace('programFinish', { completionData });
-            }}
-            onExit={() => navigation.goBack()}
-          />
-        )}
-      </Stack.Screen>
+        component={ComplexTrainingWrapper}
+      />
       <Stack.Screen 
         name="programFinish"
         options={{ headerShown: false }}
@@ -334,6 +369,7 @@ function App() {
           <PreferencesProvider>
             <LibraryProvider>
               <UserProgressProvider>
+                <WorkoutHistoryProvider>
                 <FavoritesProvider>
                   <SessionProvider>
                     <OnboardingProvider>
@@ -344,6 +380,7 @@ function App() {
                     </OnboardingProvider>
                   </SessionProvider>
                 </FavoritesProvider>
+                </WorkoutHistoryProvider>
               </UserProgressProvider>
             </LibraryProvider>
           </PreferencesProvider>

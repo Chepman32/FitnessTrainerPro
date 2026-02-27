@@ -115,7 +115,7 @@ export const FULL_BODY_EXPRESS: Program = {
   tags: ['No equipment', 'Full body', 'HIIT', 'Beginner friendly'],
   steps: fullBodyExpressSteps,
   estimatedCalories: 85,
-  thumbnailUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+  thumbnailUrl: 'https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
   difficulty: 3,
   createdAt: '2024-01-15T10:00:00Z',
   updatedAt: '2024-01-15T10:00:00Z'
@@ -255,7 +255,7 @@ export const CORE_CARDIO_MIX: Program = {
   tags: ['No equipment', 'Core', 'Cardio', 'Beginner', 'Fat burn'],
   steps: coreCardioSteps,
   estimatedCalories: 95,
-  thumbnailUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+  thumbnailUrl: 'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
   difficulty: 2,
   createdAt: '2024-01-15T11:00:00Z',
   updatedAt: '2024-01-15T11:00:00Z'
@@ -341,7 +341,7 @@ export const UPPER_BODY_STRENGTH: Program = {
   tags: ['Upper body', 'Strength', 'No equipment', 'Intermediate'],
   steps: upperBodySteps,
   estimatedCalories: 65,
-  thumbnailUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+  thumbnailUrl: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
   difficulty: 3,
   createdAt: '2024-01-15T12:00:00Z',
   updatedAt: '2024-01-15T12:00:00Z'
@@ -411,7 +411,7 @@ export const QUICK_MORNING_ROUTINE: Program = {
   tags: ['Morning', 'Gentle', 'Wake up', 'Beginner', 'No equipment'],
   steps: morningRoutineSteps,
   estimatedCalories: 25,
-  thumbnailUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+  thumbnailUrl: 'https://images.unsplash.com/photo-1447452001602-7090c7ab2db3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
   difficulty: 1,
   createdAt: '2024-01-15T06:00:00Z',
   updatedAt: '2024-01-15T06:00:00Z'
@@ -497,7 +497,7 @@ export const HIIT_BLAST: Program = {
   tags: ['HIIT', 'High intensity', 'Cardio', 'Advanced', 'No equipment'],
   steps: hiitBlastSteps,
   estimatedCalories: 120,
-  thumbnailUrl: 'https://images.unsplash.com/photo-1549060279-7e168fcee0c2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+  thumbnailUrl: 'https://images.unsplash.com/photo-1541625602330-2277a4c46182?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
   difficulty: 5,
   createdAt: '2024-01-15T18:00:00Z',
   updatedAt: '2024-01-15T18:00:00Z'

@@ -23,7 +23,7 @@ interface SimpleTrainingScreenProps {
   _soundsEnabled: boolean;
   vibrationsEnabled: boolean;
   onComplete: (results: any) => void;
-  onExit: () => void;
+  onExit: (partial: { totalElapsedMs: number }) => void;
 }
 
 const TICK_INTERVAL = 100; // Update every 100ms for smooth animation
@@ -220,8 +220,9 @@ export const SimpleTrainingScreen: React.FC<SimpleTrainingScreenProps> = ({
   
   const handleExit = useCallback(() => {
     stopTimer();
-    onExit();
-  }, [stopTimer, onExit]);
+    const elapsed = totalDurationMs - remainingMs;
+    onExit({ totalElapsedMs: elapsed });
+  }, [stopTimer, onExit, totalDurationMs, remainingMs]);
 
   const handleScreenPress = useCallback(() => {
     if (!isRunning) return;
