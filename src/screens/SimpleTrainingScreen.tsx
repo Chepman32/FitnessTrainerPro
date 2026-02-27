@@ -91,21 +91,21 @@ export const SimpleTrainingScreen: React.FC<SimpleTrainingScreenProps> = ({
 
     Animated.parallel([
       Animated.spring(ringScale, {
-        toValue: 0.5,
+        toValue: 0.8,
         velocity: 1.8,
         tension: 90,
         friction: 10,
         useNativeDriver: true
       }),
       Animated.spring(ringTranslateX, {
-        toValue: SCREEN_WIDTH * 0.31,
+        toValue: SCREEN_WIDTH * 0.23,
         velocity: 1.8,
         tension: 90,
         friction: 10,
         useNativeDriver: true
       }),
       Animated.spring(ringTranslateY, {
-        toValue: -SCREEN_HEIGHT * 0.38,
+        toValue: -SCREEN_HEIGHT * 0.33,
         velocity: -1.5,
         tension: 90,
         friction: 10,
@@ -454,7 +454,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   exerciseInfo: {
-    width: SCREEN_WIDTH * 0.81 - 96,
+    width: SCREEN_WIDTH * 0.81 - 108,
     alignSelf: 'flex-start',
     alignItems: 'flex-start',
     marginLeft: 8,
