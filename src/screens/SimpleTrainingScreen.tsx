@@ -428,7 +428,7 @@ export const SimpleTrainingScreen: React.FC<SimpleTrainingScreenProps> = ({
                 <Video
                   source={exerciseVideoSource}
                   style={styles.video}
-                  resizeMode="cover"
+                  resizeMode="contain"
                   repeat
                   muted
                   paused={isPaused}
@@ -583,11 +583,12 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   videoContainer: {
-    width: '100%',
+    width: '86%',
     height: '100%',
+    alignSelf: 'center',
     borderRadius: 20,
     overflow: 'hidden',
-    backgroundColor: 'rgba(0,0,0,0.04)',
+    backgroundColor: 'transparent',
   },
   videoArea: {
     flex: 1,
