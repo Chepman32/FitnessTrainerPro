@@ -454,7 +454,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   exerciseInfo: {
-    width: '72%',
+    width: SCREEN_WIDTH * 0.81 - 96,
     alignSelf: 'flex-start',
     alignItems: 'flex-start',
     marginLeft: 8,
