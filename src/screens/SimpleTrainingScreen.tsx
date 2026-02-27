@@ -454,7 +454,10 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   exerciseInfo: {
-    alignItems: 'center',
+    width: '72%',
+    alignSelf: 'flex-start',
+    alignItems: 'flex-start',
+    marginLeft: 8,
     marginBottom: 16,
   },
   exerciseType: {
@@ -467,14 +470,14 @@ const styles = StyleSheet.create({
   exerciseTitle: {
     fontSize: 32,
     fontWeight: '700',
-    textAlign: 'center',
+    textAlign: 'left',
     marginBottom: 16,
   },
   exerciseDescription: {
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: 'left',
     lineHeight: 22,
-    paddingHorizontal: 20,
+    paddingHorizontal: 0,
   },
   timerOverlayContainer: {
     ...StyleSheet.absoluteFillObject,
