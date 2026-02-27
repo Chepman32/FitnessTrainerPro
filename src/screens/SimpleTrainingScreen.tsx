@@ -148,7 +148,7 @@ export const SimpleTrainingScreen: React.FC<SimpleTrainingScreenProps> = ({
         useNativeDriver: true
       }),
       Animated.spring(ringTranslateY, {
-        toValue: -SCREEN_HEIGHT * 0.32,
+        toValue: -SCREEN_HEIGHT * 0.35,
         velocity: -1.5,
         tension: 90,
         friction: 10,
@@ -593,7 +593,7 @@ const styles = StyleSheet.create({
   videoArea: {
     flex: 1,
     width: '100%',
-    marginTop: 12,
+    marginTop: 28,
     marginBottom: 18,
   },
   video: {
