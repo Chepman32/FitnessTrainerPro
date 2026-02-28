@@ -14,6 +14,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
+    // Increase URL cache so remote images persist across app relaunches.
+    // Default is ~512 KB memory / ~10 MB disk — too small for library images.
+    URLCache.shared = URLCache(
+      memoryCapacity: 4 * 1024 * 1024,   // 4 MB
+      diskCapacity: 150 * 1024 * 1024,   // 150 MB
+      diskPath: "FitnessTrainerProURLCache"
+    )
+
     let delegate = ReactNativeDelegate()
     let factory = RCTReactNativeFactory(delegate: delegate)
     delegate.dependencyProvider = RCTAppDependencyProvider()
