@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { StatusBar, useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -357,7 +357,13 @@ function AppStack() {
 
 function RootNavigator() {
   const { loading, hasOnboarded } = useOnboarding();
-  if (loading) return <SplashScreen />;
+  const [splashCompleted, setSplashCompleted] = useState(false);
+  const handleSplashComplete = useCallback(() => setSplashCompleted(true), []);
+
+  if (loading || !splashCompleted) {
+    return <SplashScreen onComplete={handleSplashComplete} />;
+  }
+
   return hasOnboarded ? <AppStack /> : <OnboardingScreen />;
 }
 
